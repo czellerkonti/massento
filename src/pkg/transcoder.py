@@ -67,10 +67,10 @@ def encode(codec, inputvideo):
     return ret
 
 def move_temp( target ):
-    targetdir = os.path.dirname(videofile)
+    targetdir = os.path.dirname(target)
     if not os.path.exists(targetdir):
         os.makedirs(targetdir)
-    shutil.move(TEMPFILE,targetfile)
+    shutil.move(TEMPFILE,target)
     return
 
 def encode_test( codec, inputvideo, outputvideo ):
