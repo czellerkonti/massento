@@ -4,7 +4,7 @@ Created on 10.04.2017
 @author: Konstantin Czeller
 '''
 
-import sys,os,logging
+import sys,os,logging,shutil
 
 # logs the process here
 LOGFILE="c:\\tmp\\actual.txt"
@@ -12,18 +12,18 @@ TEMPFILE="c:\\tmp\\temp.mp4"
 TASK_LIST="c:\\tmp\\list.txt"
 SEARCHDIR="$1"
 EXTENSIONS=('avi','mpg','mpeg','mpv','mp4','mkv')
-FFMPEG="ffmpeg"
-EXTRAOPTS="-v info -y"
+FFMPEG="d:\\Tools\\ffmpeg-3.2.4-win64-shared\\bin\\ffmpeg.exe"
+EXTRAOPTS="-v info -y -i"
 
 SUBDIR="encode"
 LOG_DATE_FORMAT="%Y-%m-%d %H:%M:%S"
 
 CODECS = {}
-CODECS["mp3"]="-c:v copy -c:a libmp3lame -q:a 5"
+#CODECS["mp3"]="-c:v copy -c:a libmp3lame -q:a 5"
 CODECS["x264"]="-c:v libx264 -preset veryslow -crf 20 -tune film -c:a aac -strict experimental -ab 128k -movflags faststart"
-CODECS["x265"]="-c:v libx265 -preset slow -crf 20 -c:a aac -strict experimental -ab 128k -movflags faststart"
+#CODECS["x265"]="-c:v libx265 -preset slow -crf 20 -c:a aac -strict experimental -ab 128k -movflags faststart"
 
-POSTS = ("enc","mp3","x264","x265")
+POSTS = ("_enc","_mp3","_x264","_x265")
 
 FILES = []
 
@@ -45,19 +45,32 @@ def config_logger(logfile):
 
     fileHandler = logging.FileHandler(logfile)
     fileHandler.setFormatter(logFormatter)
-    fileHandler.setLevel(logging.WARNING)
+    fileHandler.setLevel(logging.INFO)
     rootLogger.addHandler(fileHandler)
 
     consoleHandler = logging.StreamHandler(sys.stdout)
     consoleHandler.setFormatter(logFormatter)
-    consoleHandler.setLevel(logging.INFO)
+    consoleHandler.setLevel(logging.WARNING)
     rootLogger.addHandler(consoleHandler)
-    rootLogger.setLevel(logging.INFO)
+    rootLogger.setLevel(logging.WARNING)
     return rootLogger
 
-def encode( codec, inputvideo, outputvideo ):
-    return
+def encode(codec, inputvideo):
+    if codec not in CODECS.keys():
+        logger.info("Unknown codec: "+codec)
+        return -1
+    encode_options = CODECS.get(codec)
+    logger.warning("Transcoding "+inputvideo+" - "+codec)    command = FFMPEG + " " + EXTRAOPTS + " \"" + inputvideo + "\" " + encode_options + " " + TEMPFILE
+    logger.info(command)
+    ret = os.system(command)
+    logger.warning("ret: "+str(ret))
+    return ret
+
 def move_temp( target ):
+    targetdir = os.path.dirname(videofile)
+    if not os.path.exists(targetdir):
+        os.makedirs(targetdir)
+    shutil.move(TEMPFILE,targetfile)
     return
 
 def encode_test( codec, inputvideo, outputvideo ):
@@ -85,11 +98,20 @@ def process_folder( folder ):
             process_video(c,file)
 
 def process_video(codec, videofile):
-    fname=os.path.splitext(os.path.basename(videofile))[0]+".mp4"
-    targetdir=os.path.dirname(videofile)+os.path.sep+SUBDIR
-    targetfile=os.path.join(targetdir,fname)
+    targetfile = generate_output_path(videofile,codec)
+    ret = encode(codec,videofile)
+    if ret == 0:
+        logger.warning("done")
+        move_temp(targetfile)
+    else:
+        logger.warning("failed")
     
-        
+
+def generate_output_path(videofile, marker):
+    fname=os.path.splitext(os.path.basename(videofile))[0]+"_"+marker+".mp4"    
+    targetdir=os.path.dirname(videofile)+os.path.sep+SUBDIR
+    return os.path.join(targetdir,fname)
+    
 
 param1 = sys.argv[1]
 
