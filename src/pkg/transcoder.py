@@ -19,18 +19,29 @@ SUBDIR="encode"
 LOG_DATE_FORMAT="%Y-%m-%d %H:%M:%S"
 
 CODECS = {}
-CODECS["mp3"]="-c:v copy -c:a libmp3lame -q:a 5"
-CODECS["x264"]="-c:v libx264 -preset veryslow -crf 20 -tune film -c:a aac -strict experimental -ab 128k -movflags faststart"
-CODECS["x265"]="-c:v libx265 -preset slow -crf 20 -c:a aac -strict experimental -ab 128k -movflags faststart"
+CODECS["mp3"]="-c:v copy -c:a libmp3lame -q:a 5 -"
+CODECS["x264"]="-c:v libx264 -preset veryslow -crf 20 -tune film -c:a copy -movflags +faststart"
+CODECS["x265"]="-c:v libx265 -preset slow -crf 20 -c:a copy -movflags +faststart"
 
 POSTS = list("_" + post for post in CODECS.keys())
+POSTS.append("_enc")
 
 FILES = []
 
-print(POSTS)
-
 if len(sys.argv) == 3:
-    SELECTED_CODECS = sys.argv[2]
+    SELECTED_CODECS = sys.argv[2].split(",")
+    WRONG_CODECS = []
+    for codec in SELECTED_CODECS:
+        if codec not in CODECS.keys():
+            print("Unknown codec: " + str(codec))
+            WRONG_CODECS.append(codec)
+    for c in WRONG_CODECS:
+        SELECTED_CODECS.remove(c)
+    if not SELECTED_CODECS:
+        print("There is no known codec given.")
+        print("Known codecs: " + str(list(CODECS.keys())))
+        print("Exiting...")
+        sys.exit()
 else:
     SELECTED_CODECS = CODECS.keys()
 
@@ -88,9 +99,16 @@ def collect_videos(dir):
                     FILES.append(os.path.join(root,file))
 
 # print/write out the found videos
-def print_tasklist():
+def print_videolist():
     for file in FILES:
             logger.error(file)
+
+def print_tasklist():
+    for file in FILES:
+        for c in SELECTED_CODECS:
+            targetfile = generate_output_path(file, c)
+            if not os.path.isfile(targetfile):
+                logger.error(file + " - " + c)
 
 # prepare the output filenames and start the encoding
 def process_folder( folder ):
@@ -120,19 +138,23 @@ def generate_output_path(videofile, marker):
 
 param1 = sys.argv[1]
 
-print("Argument List:", str(sys.argv))
 print("Selected codecs: ", SELECTED_CODECS)
 
 logger = config_logger(LOGFILE)
 
+
 if os.path.isfile(param1):
-    logger.info("File processing: \""+param1+"\"")
+    logger.error("File processing: \""+param1+"\"")
     for c in SELECTED_CODECS:
         process_video(param1, c)
 
 if os.path.isdir(param1):
-    logger.info("Folder processing: "+param1)
+    logger.error("Folder processing: "+param1)
     collect_videos(param1)
+    logger.error(" --- Video List ---")
+    print_videolist()
+    input("Press a key to continue...")
+    logger.error(" --- Task List ---")
     print_tasklist()
     input("Press a key to continue...")
     process_folder(param1)
