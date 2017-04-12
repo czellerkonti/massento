@@ -22,6 +22,7 @@ CODECS = {}
 CODECS["mp3"]="-c:v copy -c:a libmp3lame -q:a 5 -"
 CODECS["x264"]="-c:v libx264 -preset veryslow -crf 20 -tune film -c:a copy -movflags +faststart"
 CODECS["x265"]="-c:v libx265 -preset slow -crf 20 -c:a copy -movflags +faststart"
+CODECS["x265_aac"]="-c:v libx265 -preset slow -crf 20 -c:a aac -ab 160k -movflags +faststart"
 
 POSTS = list("_" + post for post in CODECS.keys())
 POSTS.append("_enc")
@@ -74,7 +75,7 @@ def encode(codec, inputvideo):
         return -1
     encode_options = CODECS.get(codec)
     logger.warning("Transcoding "+inputvideo+" - "+codec)    command = FFMPEG + " " + EXTRAOPTS + " \"" + inputvideo + "\" " + encode_options + " " + TEMPFILE
-    logger.info(command)
+    logger.error(command)
     ret = os.system(command)
     logger.warning("ret: "+str(ret))
     return ret
