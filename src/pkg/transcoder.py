@@ -19,18 +19,20 @@ SUBDIR="encode"
 LOG_DATE_FORMAT="%Y-%m-%d %H:%M:%S"
 
 CODECS = {}
-#CODECS["mp3"]="-c:v copy -c:a libmp3lame -q:a 5"
+CODECS["mp3"]="-c:v copy -c:a libmp3lame -q:a 5"
 CODECS["x264"]="-c:v libx264 -preset veryslow -crf 20 -tune film -c:a aac -strict experimental -ab 128k -movflags faststart"
-#CODECS["x265"]="-c:v libx265 -preset slow -crf 20 -c:a aac -strict experimental -ab 128k -movflags faststart"
+CODECS["x265"]="-c:v libx265 -preset slow -crf 20 -c:a aac -strict experimental -ab 128k -movflags faststart"
 
-POSTS = ("_enc","_mp3","_x264","_x265")
+POSTS = list("_" + post for post in CODECS.keys())
 
 FILES = []
+
+print(POSTS)
 
 if len(sys.argv) == 3:
     SELECTED_CODECS = sys.argv[2]
 else:
-    SELECTED_CODECS = ["x264", "x265","mp3"]
+    SELECTED_CODECS = CODECS.keys()
 
 try:
     os.remove(LOGFILE)
@@ -57,7 +59,7 @@ def config_logger(logfile):
 
 def encode(codec, inputvideo):
     if codec not in CODECS.keys():
-        logger.info("Unknown codec: "+codec)
+        logger.error("Unknown codec: "+codec)
         return -1
     encode_options = CODECS.get(codec)
     logger.warning("Transcoding "+inputvideo+" - "+codec)    command = FFMPEG + " " + EXTRAOPTS + " \"" + inputvideo + "\" " + encode_options + " " + TEMPFILE
@@ -81,15 +83,14 @@ def collect_videos(dir):
         for file in files:
             if file.endswith(EXTENSIONS):
                 if  any(ext in file for ext in POSTS):
-                    v=1 
-                    #logger.warning("Skipping: "+os.path.join(root,file))
+                    logger.error("Skipping - encoded file: "+os.path.join(root,file))
                 else:
                     FILES.append(os.path.join(root,file))
 
 # print/write out the found videos
 def print_tasklist():
     for file in FILES:
-            logger.info(file)
+            logger.error(file)
 
 # prepare the output filenames and start the encoding
 def process_folder( folder ):
@@ -99,13 +100,17 @@ def process_folder( folder ):
 
 def process_video(codec, videofile):
     targetfile = generate_output_path(videofile,codec)
+    # file exists
+    if os.path.isfile(targetfile):
+        logger.error(targetfile + " has been already transcoded")
+        return -1
+    
     ret = encode(codec,videofile)
     if ret == 0:
         logger.warning("done")
         move_temp(targetfile)
     else:
-        logger.warning("failed")
-    
+        logger.warning("Failed to encode video: " + videofile + " - " + codec + " ret: " + str(ret))
 
 def generate_output_path(videofile, marker):
     fname=os.path.splitext(os.path.basename(videofile))[0]+"_"+marker+".mp4"    
