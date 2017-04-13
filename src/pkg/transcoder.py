@@ -147,7 +147,7 @@ logger = config_logger(LOGFILE)
 if os.path.isfile(param1):
     logger.error("File processing: \""+param1+"\"")
     for c in SELECTED_CODECS:
-        process_video(param1, c)
+        process_video(c, param1)
 
 if os.path.isdir(param1):
     logger.error("Folder processing: "+param1)
