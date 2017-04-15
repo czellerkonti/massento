@@ -4,7 +4,8 @@ Created on 10.04.2017
 @author: Konstantin Czeller
 '''
 
-import sys,os,logging,shutil, argparse
+import sys,os,logging,shutil,argparse
+from os import system
 
 # logs the process here
 LOGFILE="c:\\tmp\\actual.txt"
@@ -23,11 +24,14 @@ CODECS["mp3"]="-c:v copy -c:a libmp3lame -q:a 5 -"
 CODECS["x264"]="-c:v libx264 -preset veryslow -crf 20 -tune film -c:a copy -movflags +faststart"
 CODECS["x265"]="-c:v libx265 -preset slow -crf 20 -c:a copy -movflags +faststart"
 CODECS["x265_aac"]="-c:v libx265 -preset slow -crf 20 -c:a aac -ab 160k -movflags +faststart"
+CODECS["x264_aac"]="-c:v libx264 -preset veryslow -crf 20 -tune film -c:a aac -ab 160k -movflags +faststart"
 
 POSTS = list("_" + post for post in CODECS.keys())
 POSTS.append("_enc")
 SELECTED_CODECS = []
 FILES = []
+
+system("title: new title")
 
 try:
     os.remove(LOGFILE)
@@ -66,11 +70,12 @@ def encode(codec, inputvideo):
     logger.warning("ret: "+str(ret))
     return ret
 
-def move_temp( target ):
+def move_temp( target, date ):
     targetdir = os.path.dirname(target)
     if not os.path.exists(targetdir):
         os.makedirs(targetdir)
     shutil.move(TEMPFILE,target)
+    os.utime(target, (date, date))
     return
 
 def encode_test( codec, inputvideo, outputvideo ):
@@ -85,8 +90,6 @@ def collect_videos(dir):
                 else:
                     print("adding: " + file)
                     FILES.append(os.path.join(root,file))
-            else:
-                print("faszom: " + file + " - " + str(EXTENSIONS))
 
 # print/write out the found videos
 def print_videolist():
@@ -116,7 +119,8 @@ def process_video(codec, videofile):
     ret = encode(codec,videofile)
     if ret == 0:
         logger.warning("done")
-        move_temp(targetfile)
+        olddate = os.path.getmtime(videofile)
+        move_temp(targetfile, olddate)
     else:
         logger.warning("Failed to encode video: " + videofile + " - " + codec + " ret: " + str(ret))
 
