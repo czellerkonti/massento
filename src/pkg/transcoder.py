@@ -8,15 +8,15 @@ import sys,os,logging,shutil,argparse
 from os import system
 
 # logs the process here
-LOGFILE="c:\\tmp\\actual.txt"
-TEMPFILE="c:\\tmp\\temp.mp4"
-TASK_LIST="c:\\tmp\\list.txt"
-SEARCHDIR="$1"
-EXTENSIONS=('avi','mpg','mpeg','mpv','mp4','mkv','mov')
 FFMPEG="d:\\Tools\\ffmpeg-3.2.4-win64-shared\\bin\\ffmpeg.exe"
+TEMPPATH="c:\\tmp"
+LOGFILE=TEMPPATH + os.path.sep + "actual.txt"
+TEMPFILE=TEMPPATH + os.path.sep + "temp.mp4"
+TASK_LIST=TEMPPATH + os.path.sep + "list.txt"
+
+EXTENSIONS=('avi','mpg','mpeg','mpv','mp4','mkv','mov')
 EXTRAOPTS="-v info -y -i"
 
-SUBDIR="encode"
 LOG_DATE_FORMAT="%Y-%m-%d %H:%M:%S"
 
 CODECS = {}
@@ -133,7 +133,9 @@ def generate_output_path(videofile, marker):
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Transcodes videos in a folder")
     parser.add_argument("-c","--codecs", help="available codecs: " + str(list(CODECS.keys())))
-    parser.add_argument("-i","--input", help="Input folder/directory")
+    parser.add_argument("-i","--input", help="Input file/directory")
+    parser.add_argument("-t","--temppath", help="Temp directory")
+    parser.add_argument("-f","--ffmpeg", help="Path to ffmpeg binary")
     parser.add_argument("-s","--show", help="Show available encoding templates", action="count")
     args = parser.parse_args()
     
@@ -163,6 +165,13 @@ def main():
         for key in CODECS.keys():    
             print(key+":    " + CODECS.get(key))
         sys.exit(1)
+    
+    if args.temppath:
+        TEMPPATH = args.temppath
+        
+    if args.ffmpeg:
+        FFMPEG = args.ffmpeg
+        
     
     if not args.codecs:
         SELECTED_CODECS = CODECS.keys()
