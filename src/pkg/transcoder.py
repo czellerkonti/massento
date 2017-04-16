@@ -31,8 +31,6 @@ POSTS.append("_enc")
 SELECTED_CODECS = []
 FILES = []
 
-system("title: new title")
-
 try:
     os.remove(LOGFILE)
     os.remove(TEMPFILE)
@@ -105,8 +103,11 @@ def print_tasklist():
 
 # prepare the output filenames and start the encoding
 def process_folder( folder ):
+    x = 0
     for c in SELECTED_CODECS:
         for file in FILES:
+            x = x + 1
+            system("title "+str(x)  + "/" + str(len(FILES)) + " - " + file)
             process_video(c,file)
 
 def process_video(codec, videofile):
