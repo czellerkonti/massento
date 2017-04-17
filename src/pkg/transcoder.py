@@ -4,12 +4,14 @@ Created on 10.04.2017
 @author: Konstantin Czeller
 '''
 
-import sys,os,logging,shutil,argparse
+import sys,os,logging,shutil,argparse,platform
 from os import system
 
 # logs the process here
 FFMPEG="d:\\Tools\\ffmpeg-3.2.4-win64-shared\\bin\\ffmpeg.exe"
-TEMPPATH="c:\\tmp"
+#FFMPEG="ffmpeg"
+#TEMPPATH="/mnt/data/tmp"
+TEMPPATH="C:\\tmp\\"
 LOGFILE=TEMPPATH + os.path.sep + "actual.txt"
 TEMPFILE=TEMPPATH + os.path.sep + "temp.mp4"
 TASK_LIST=TEMPPATH + os.path.sep + "list.txt"
@@ -107,7 +109,7 @@ def process_folder( folder ):
     for c in SELECTED_CODECS:
         for file in FILES:
             x = x + 1
-            system("title "+str(x)  + "/" + str(len(FILES)) + " - " + file)
+            set_window_title(str(x)  + "/" + str(len(FILES)) + " - " + file)
             process_video(c,file)
 
 def process_video(codec, videofile):
@@ -143,7 +145,6 @@ def parse_arguments():
         print("Input not found.")
         parser.print_help()
         sys.exit(2)
-
     return args
 
 def cleanup_logs():
@@ -153,6 +154,21 @@ def cleanup_logs():
         os.remove(TASK_LIST)
     except (OSError) as e:
         print ("")  
+
+def set_window_title(newTitle):
+    systemType = platform.system()
+    if systemType == "Linux":
+        sys.stdout.write("\x1b]2;" + newTitle + "\x07")
+    elif systemType == "Windows":
+        system("title "+newTitle)
+        
+def my_input(message):
+    py_version = sys.version_info[0]
+    
+    if py_version == 2:
+        return raw_input(message)
+    if py_version == 3:
+        return input(message)
 
 def main():
     global SELECTED_CODECS
@@ -168,6 +184,10 @@ def main():
     
     if args.temppath:
         TEMPPATH = args.temppath
+        LOGFILE=TEMPPATH + os.path.sep + "actual.txt"
+        TEMPFILE=TEMPPATH + os.path.sep + "temp.mp4"
+        TASK_LIST=TEMPPATH + os.path.sep + "list.txt"
+        print("temp changed");
         
     if args.ffmpeg:
         FFMPEG = args.ffmpeg
@@ -203,10 +223,11 @@ def main():
         collect_videos(inputParam)
         logger.error(" --- Video List ---")
         print_videolist()
-        input("Press a key to continue...")
+        my_input("Press a key to continue...")
         logger.error(" --- Task List ---")
         print_tasklist()
-        input("Press a key to continue...")
+        my_input("Press a key to continue...")
         process_folder(inputParam)
         logger.error("Exit.")
+
 main()
