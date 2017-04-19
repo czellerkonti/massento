@@ -1,0 +1,32 @@
+{
+	"templates": {
+		"mp3": {
+			"opts": "-c:v copy -c:a libmp3lame -q:a 5 -movflags +faststart",
+			"container": "mp4"
+		},
+		"x264": {
+			"opts": "-c:v libx264 -preset veryslow -crf 20 -tune film -c:a copy -movflags +faststart",
+			"container": "mp4"
+		},
+		"x265": {
+			"opts": "-c:v libx265 -preset slow -crf 20 -c:a copy -movflags +faststart",
+			"container": "mp4"
+		},
+		"x265_aac": {
+			"opts":	"-c:v libx265 -preset slow -crf 20 -c:a aac -ab 160k -movflags +faststart",
+			"container": "mp4"
+		},
+		"x264_aac": {
+			"opts":	"-c:v libx264 -preset veryslow -crf 20 -tune film -c:a aac -ab 160k -movflags +faststart",
+			"container": "mp4"
+		},
+		"mp3_all": {
+			"opts":	"-c:v copy -c:a libmp3lame -q:a 5 -a:0",
+			"container": "mkv"
+		}
+	},
+	"ffmpeg":		"d:\\Tools\\ffmpeg-3.2.4-win64-shared\\bin\\ffmpeg.exe",
+	"temppath":		"C:\\tmp\\",
+	"extensions_filter": ["avi","mpg","mpeg","mpv","mp4","mkv","mov","3gp"]
+	
+}
