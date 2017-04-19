@@ -47,7 +47,6 @@ try:
 except (OSError) as e:
     print ("")  
 
-
 def config_logger(logfile):
     logFormatter = logging.Formatter('%(asctime)s %(message)s',datefmt=LOG_DATE_FORMAT)
     rootLogger = logging.getLogger()
@@ -63,8 +62,6 @@ def config_logger(logfile):
     rootLogger.addHandler(consoleHandler)
     rootLogger.setLevel(logging.WARNING)
     return rootLogger
-
-logger = config_logger(LOGFILE)
 
 def encode(codec, inputvideo):
     if codec not in CODECS.keys():
@@ -180,7 +177,10 @@ def my_input(message):
 def read_config(file):
     global CODECS;
     global FFMPEG;
-    global TEMPPATH;
+    global TEMPPATH
+    global LOGFILE
+    global TEMPFILE
+    global TASK_LIST
     global EXTENSIONS;
     global POSTS;
     with open(file) as data:
@@ -198,41 +198,34 @@ def read_config(file):
             FFMPEG = d["ffmpeg"]
         if 'temppath' in d:
             TEMPPATH = d["temppath"]
+            LOGFILE=TEMPPATH + os.path.sep + "actual.txt"
+            TEMPFILE=TEMPPATH + os.path.sep + "temp.mp4"
+            TASK_LIST=TEMPPATH + os.path.sep + "list.txt" 
         if 'extensions_filter' in d:
-            EXTENSIONS = d["extensions_filter"]
+            EXTENSIONS = tuple(d["extensions_filter"])
             
 def main():
     read_config('config.json')
     global SELECTED_CODECS
     global FFMPEG
-    global TEMPPATH
     global EXTENSIONS
+    global TEMPPATH
+    global LOGFILE
+    global TEMPFILE
+    global TASK_LIST
     args = parse_arguments()    
     
     inputParam = args.input
-    if args.show:
-        print("Available templates")
-        print("")
-        for key in CODECS.keys():    
-            print(key+":    " + CODECS.get(key) + ' ('+CONTAINERS.get(key) + ')')
-        print()
-        print("FFMPEG: " + FFMPEG)
-        print("TEMPPATH: " + TEMPPATH)
-        print("EXTENSION FILTER: " + str(EXTENSIONS))
-        print("POSTS: " + str(POSTS))
-        sys.exit(1)
     
     if args.temppath:
         TEMPPATH = args.temppath
         LOGFILE=TEMPPATH + os.path.sep + "actual.txt"
         TEMPFILE=TEMPPATH + os.path.sep + "temp.mp4"
         TASK_LIST=TEMPPATH + os.path.sep + "list.txt"
-        print("temp changed");
         
     if args.ffmpeg:
         FFMPEG = args.ffmpeg
         
-    
     if not args.codecs:
         SELECTED_CODECS = CODECS.keys()
     else:
@@ -251,6 +244,20 @@ def main():
             print("Exiting...")
             sys.exit(1)
     
+    if args.show:
+        print("Available templates")
+        print("")
+        for key in CODECS.keys():    
+            print(key+":    " + CODECS.get(key) + ' ('+CONTAINERS.get(key) + ')')
+        print()
+        print("FFMPEG: " + FFMPEG)
+        print("TEMPPATH: " + TEMPPATH)
+        print("EXTENSION FILTER: " + str(EXTENSIONS))
+        print("POSTS: " + str(POSTS))
+        sys.exit(1)
+        
+    global logger 
+    logger = config_logger(LOGFILE)
     print("Selected codecs: ", SELECTED_CODECS)
     
     if os.path.isfile(inputParam):
