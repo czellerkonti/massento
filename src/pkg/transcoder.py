@@ -4,7 +4,7 @@ Created on 10.04.2017
 @author: Konstantin Czeller
 '''
 
-import sys,os,logging,shutil,argparse,platform
+import sys,os,logging,shutil,argparse,platform,json
 from os import system
 
 # logs the process here
@@ -22,11 +22,18 @@ EXTRAOPTS="-v info -y -i"
 LOG_DATE_FORMAT="%Y-%m-%d %H:%M:%S"
 
 CODECS = {}
-CODECS["mp3"]="-c:v copy -c:a libmp3lame -q:a 5 -"
+CODECS["mp3"]="-c:v copy -c:a libmp3lame -q:a 5 -movflags +faststart"
 CODECS["x264"]="-c:v libx264 -preset veryslow -crf 20 -tune film -c:a copy -movflags +faststart"
 CODECS["x265"]="-c:v libx265 -preset slow -crf 20 -c:a copy -movflags +faststart"
 CODECS["x265_aac"]="-c:v libx265 -preset slow -crf 20 -c:a aac -ab 160k -movflags +faststart"
 CODECS["x264_aac"]="-c:v libx264 -preset veryslow -crf 20 -tune film -c:a aac -ab 160k -movflags +faststart"
+
+CONTAINERS = {}
+CONTAINERS["mp3"]="mp4"
+CONTAINERS["x264"]="mp4"
+CONTAINERS["x265"]="mp4"
+CONTAINERS["x265_aac"]="mp4"
+CONTAINERS["x264_aac"]="mp4"
 
 POSTS = list("_" + post for post in CODECS.keys())
 POSTS.append("_enc")
@@ -170,8 +177,36 @@ def my_input(message):
     if py_version == 3:
         return input(message)
 
+def read_config(file):
+    global CODECS;
+    global FFMPEG;
+    global TEMPPATH;
+    global EXTENSIONS;
+    global POSTS;
+    with open(file) as data:
+        d = json.load(data)
+        if 'templates' in d:
+            templates = d["templates"]
+            if len(templates) > 0:
+                CODECS.clear();
+                for templateid in templates.keys():
+                    CODECS[templateid] = templates[templateid]["opts"];
+                    CONTAINERS[templateid] = templates[templateid]["container"];
+            POSTS = list("_" + post for post in CODECS.keys())
+            POSTS.append("_enc")
+        if 'ffmpeg' in d:
+            FFMPEG = d["ffmpeg"]
+        if 'temppath' in d:
+            TEMPPATH = d["temppath"]
+        if 'extensions_filter' in d:
+            EXTENSIONS = d["extensions_filter"]
+            
 def main():
+    read_config('config.json')
     global SELECTED_CODECS
+    global FFMPEG
+    global TEMPPATH
+    global EXTENSIONS
     args = parse_arguments()    
     
     inputParam = args.input
@@ -179,7 +214,12 @@ def main():
         print("Available templates")
         print("")
         for key in CODECS.keys():    
-            print(key+":    " + CODECS.get(key))
+            print(key+":    " + CODECS.get(key) + ' ('+CONTAINERS.get(key) + ')')
+        print()
+        print("FFMPEG: " + FFMPEG)
+        print("TEMPPATH: " + TEMPPATH)
+        print("EXTENSION FILTER: " + str(EXTENSIONS))
+        print("POSTS: " + str(POSTS))
         sys.exit(1)
     
     if args.temppath:
