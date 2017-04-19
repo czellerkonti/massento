@@ -138,9 +138,9 @@ def generate_output_path(videofile, marker):
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Transcodes videos in a folder")
-    parser.add_argument("-c","--codecs", help="available codecs: " + str(list(CODECS.keys())))
+    parser.add_argument("-t","--templates", help="available templates: " + str(list(CODECS.keys())))
     parser.add_argument("-i","--input", help="Input file/directory")
-    parser.add_argument("-t","--temppath", help="Temp directory")
+    parser.add_argument("-m","--temppath", help="Temp directory")
     parser.add_argument("-f","--ffmpeg", help="Path to ffmpeg binary")
     parser.add_argument("-s","--show", help="Show available encoding templates", action="count")
     args = parser.parse_args()
@@ -226,10 +226,10 @@ def main():
     if args.ffmpeg:
         FFMPEG = args.ffmpeg
         
-    if not args.codecs:
+    if not args.templates:
         SELECTED_CODECS = CODECS.keys()
     else:
-        SELECTED_CODECS = args.codecs.split(",")
+        SELECTED_CODECS = args.templates.split(",")
         WRONG_CODECS = []
         for codec in SELECTED_CODECS:
             if codec not in CODECS.keys():
