@@ -40,6 +40,7 @@ POSTS.append("_enc")
 SELECTED_CODECS = []
 FILES = []
 FORCE_ENCODE = False
+PARANOID = False
 
 try:
     os.remove(LOGFILE)
@@ -157,6 +158,7 @@ def parse_arguments():
     parser.add_argument("-e","--encoder", help="Path to encoder binary")
     parser.add_argument("-s","--show", help="Show available encoding templates", action="count")
     parser.add_argument("-f","--force", help="Re-encode already encoded videos", action="count")
+    parser.add_argument("-p","--paranoid", help="Paranoid skipping", action="count")
     args = parser.parse_args()
     
     if not args.input and not args.show:
@@ -228,6 +230,8 @@ def main():
     global TEMPFILE
     global TASK_LIST
     global FORCE_ENCODE
+    global PARANOID
+    
     args = parse_arguments()    
     
     inputParam = args.input
@@ -273,6 +277,9 @@ def main():
     
     if args.force:
         FORCE_ENCODE = True
+    
+    if args.paranoid:
+        PARANOID = True
     
     global logger 
     logger = config_logger(LOGFILE)
