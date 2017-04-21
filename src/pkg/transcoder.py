@@ -234,9 +234,8 @@ def main():
     
     if args.temppath:
         TEMPPATH = args.temppath
-        LOGFILE=TEMPPATH + os.path.sep + "actual.txt"
-        TEMPFILE=TEMPPATH + os.path.sep + "temp"
-        TASK_LIST=TEMPPATH + os.path.sep + "list.txt"
+        LOGFILE = TEMPPATH + os.path.sep + "actual.txt"
+        TASK_LIST = TEMPPATH + os.path.sep + "list.txt"
         
     if args.encoder:
         FFMPEG = args.encoder
