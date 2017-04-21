@@ -13,7 +13,7 @@ FFMPEG="d:\\Tools\\ffmpeg-3.2.4-win64-shared\\bin\\ffmpeg.exe"
 #TEMPPATH="/mnt/data/tmp"
 TEMPPATH="C:\\tmp\\"
 LOGFILE=TEMPPATH + os.path.sep + "actual.txt"
-TEMPFILE=TEMPPATH + os.path.sep + "temp.mp4"
+TEMPFILE="temp"
 TASK_LIST=TEMPPATH + os.path.sep + "list.txt"
 
 EXTENSIONS=('avi','mpg','mpeg','mpv','mp4','mkv','mov')
@@ -42,7 +42,7 @@ FILES = []
 
 try:
     os.remove(LOGFILE)
-    os.remove(TEMPFILE)
+    #os.remove(TEMPFILE)
     os.remove(TASK_LIST)
 except (OSError) as e:
     print ("")  
@@ -68,17 +68,18 @@ def encode(codec, inputvideo):
         logger.error("Unknown codec: "+codec)
         return -1
     encode_options = CODECS.get(codec)
-    logger.warning("Transcoding "+inputvideo+" - "+codec)    command = FFMPEG + " " + EXTRAOPTS + " \"" + inputvideo + "\" " + encode_options + " " + TEMPFILE
+    logger.warning("Transcoding "+inputvideo+" - "+codec)    command = FFMPEG + " " + EXTRAOPTS + " \"" + inputvideo + "\" " + encode_options + " " + get_temp_file(codec)
     logger.error(command)
     ret = os.system(command)
     logger.warning("ret: "+str(ret))
     return ret
 
-def move_temp( target, date ):
+def move_temp( tempfile, target, date ):
     targetdir = os.path.dirname(target)
     if not os.path.exists(targetdir):
         os.makedirs(targetdir)
-    shutil.move(TEMPFILE,target)
+    logger.warning("Moving")
+    shutil.move(tempfile,target)
     os.utime(target, (date, date))
     return
 
@@ -127,14 +128,20 @@ def process_video(codec, videofile):
     if ret == 0:
         logger.warning("done")
         olddate = os.path.getmtime(videofile)
-        move_temp(targetfile, olddate)
+        move_temp(get_temp_file(codec),targetfile, olddate)
     else:
         logger.warning("Failed to encode video: " + videofile + " - " + codec + " ret: " + str(ret))
 
-def generate_output_path(videofile, marker):
-    fname = os.path.splitext(os.path.basename(videofile))[0]+"_"+marker+".mp4"  
-    targetdir=os.path.dirname(videofile)+os.path.sep+marker
-    return os.path.join(targetdir,fname)
+def get_temp_file(template):
+    ret = TEMPPATH + os.path.sep + TEMPFILE +'.' + CONTAINERS[template]
+    print("TEMPFILE: " + ret)
+    return ret
+
+def generate_output_path(videofile, codec):
+    fname = os.path.splitext(os.path.basename(videofile))[0]+"_" + codec + "." + CONTAINERS[codec]
+    targetdir=os.path.dirname(videofile)+os.path.sep+codec
+    ret = os.path.join(targetdir,fname)
+    return ret
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Transcodes videos in a folder")
@@ -199,7 +206,6 @@ def read_config(file):
         if 'temppath' in d:
             TEMPPATH = d["temppath"]
             LOGFILE=TEMPPATH + os.path.sep + "actual.txt"
-            TEMPFILE=TEMPPATH + os.path.sep + "temp.mp4"
             TASK_LIST=TEMPPATH + os.path.sep + "list.txt" 
         if 'extensions_filter' in d:
             EXTENSIONS = tuple(d["extensions_filter"])
@@ -220,7 +226,7 @@ def main():
     if args.temppath:
         TEMPPATH = args.temppath
         LOGFILE=TEMPPATH + os.path.sep + "actual.txt"
-        TEMPFILE=TEMPPATH + os.path.sep + "temp.mp4"
+        TEMPFILE=TEMPPATH + os.path.sep + "temp"
         TASK_LIST=TEMPPATH + os.path.sep + "list.txt"
         
     if args.ffmpeg:

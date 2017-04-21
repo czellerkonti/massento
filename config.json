@@ -21,12 +21,16 @@
 			"container": "mp4"
 		},
 		"mp3_all": {
-			"opts":	"-c:v copy -c:a libmp3lame -q:a 5 -a:0",
+			"opts":	"-c:v copy -c:a libmp3lame -q:a 5 -map 0:a",
 			"container": "mkv"
+		},
+		"copy": {
+			"opts":	"-c:v copy -c:a copy",
+			"container": "mp4"
 		}
 	},
-	"ffmpeg":		"d:\\Tools\\ffmpeg-3.2.4-win64-shared\\bin\\ffmpeg.exe",
+	"ffmpeg":		"ffmpeg",
 	"temppath":		"C:\\tmp\\",
-	"extensions_filter": ["avi","mpg","mpeg","mpv","mp4","mkv","mov","3gp"]
+	"extensions_filter": ["avi","mpg","mpeg","mpv","mp4","mkv","mov"]
 	
 }
