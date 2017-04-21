@@ -153,12 +153,8 @@ def generate_output_path(videofile, codec):
     if not DST_ROOT:
         targetdir = targetdir + codec 
     if DST_ROOT:
-        print("targetdir: " + targetdir)
-        print("SRC_ROOT: "+SRC_ROOT)
-        print("DST_ROOT: "+DST_ROOT)
         targetdir = targetdir.replace(SRC_ROOT, DST_ROOT)
     ret = os.path.join(targetdir,fname)
-    print("TARGET: " + ret)
     return ret
 
 def parse_arguments():
