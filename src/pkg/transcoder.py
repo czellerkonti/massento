@@ -39,6 +39,7 @@ POSTS = list("_" + post for post in CODECS.keys())
 POSTS.append("_enc")
 SELECTED_CODECS = []
 FILES = []
+FORCE_ENCODE = False
 
 try:
     os.remove(LOGFILE)
@@ -105,6 +106,9 @@ def print_tasklist():
     for file in FILES:
         for c in SELECTED_CODECS:
             targetfile = generate_output_path(file, c)
+            if FORCE_ENCODE:
+                logger.error(file + " - " + c + " (forced)")
+                continue
             if not os.path.isfile(targetfile):
                 logger.error(file + " - " + c)
 
@@ -120,9 +124,11 @@ def process_folder( folder ):
 def process_video(codec, videofile):
     targetfile = generate_output_path(videofile,codec)
     # file exists
-    if os.path.isfile(targetfile):
+    if os.path.isfile(targetfile) and  not FORCE_ENCODE:
         logger.error(targetfile + " has been already transcoded")
         return -1
+    
+    if FORCE_ENCODE: logger.warning("Forcing re-encode: " + videofile)
     
     ret = encode(codec,videofile)
     if ret == 0:
@@ -145,11 +151,12 @@ def generate_output_path(videofile, codec):
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Transcodes videos in a folder")
-    parser.add_argument("-t","--templates", help="available templates: " + str(list(CODECS.keys())))
+    parser.add_argument("-t","--templates", help="Available templates: " + str(list(CODECS.keys())))
     parser.add_argument("-i","--input", help="Input file/directory")
     parser.add_argument("-m","--temppath", help="Temp directory")
-    parser.add_argument("-f","--ffmpeg", help="Path to ffmpeg binary")
+    parser.add_argument("-e","--encoder", help="Path to encoder binary")
     parser.add_argument("-s","--show", help="Show available encoding templates", action="count")
+    parser.add_argument("-f","--force", help="Re-encode already encoded videos", action="count")
     args = parser.parse_args()
     
     if not args.input and not args.show:
@@ -190,6 +197,7 @@ def read_config(file):
     global TASK_LIST
     global EXTENSIONS;
     global POSTS;
+    
     with open(file) as data:
         d = json.load(data)
         if 'templates' in d:
@@ -219,6 +227,7 @@ def main():
     global LOGFILE
     global TEMPFILE
     global TASK_LIST
+    global FORCE_ENCODE
     args = parse_arguments()    
     
     inputParam = args.input
@@ -229,8 +238,8 @@ def main():
         TEMPFILE=TEMPPATH + os.path.sep + "temp"
         TASK_LIST=TEMPPATH + os.path.sep + "list.txt"
         
-    if args.ffmpeg:
-        FFMPEG = args.ffmpeg
+    if args.encoder:
+        FFMPEG = args.encoder
         
     if not args.templates:
         SELECTED_CODECS = CODECS.keys()
@@ -261,7 +270,10 @@ def main():
         print("EXTENSION FILTER: " + str(EXTENSIONS))
         print("POSTS: " + str(POSTS))
         sys.exit(1)
-        
+    
+    if args.force:
+        FORCE_ENCODE = True
+    
     global logger 
     logger = config_logger(LOGFILE)
     print("Selected codecs: ", SELECTED_CODECS)
@@ -274,11 +286,13 @@ def main():
     if os.path.isdir(inputParam):
         logger.error("Folder processing: "+inputParam)
         collect_videos(inputParam)
-        logger.error(" --- Video List ---")
+        logger.error("--- Video List ---")
         print_videolist()
+        logger.error("------------------")
         my_input("Press a key to continue...")
-        logger.error(" --- Task List ---")
+        logger.error("--- Task List ---")
         print_tasklist()
+        logger.error("-----------------")
         my_input("Press a key to continue...")
         process_folder(inputParam)
         logger.error("Exit.")
