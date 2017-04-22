@@ -42,6 +42,8 @@ SELECTED_CODECS = []
 FILES = []
 FORCE_ENCODE = False
 PARANOID = False
+DST_ROOT = ""
+SRC_ROOT = ""
 
 try:
     os.remove(LOGFILE)
@@ -71,7 +73,8 @@ def encode(codec, inputvideo):
         logger.error("Unknown codec: "+codec)
         return -1
     encode_options = CODECS.get(codec)
-    logger.warning("Transcoding "+inputvideo+" - "+codec)    command = FFMPEG + " " + EXTRAOPTS + " \"" + inputvideo + "\" " + encode_options + " " + get_temp_file(codec)
+    logger.warning("Transcoding "+inputvideo+" - "+codec)
+    command = FFMPEG + " " + EXTRAOPTS + " \"" + inputvideo + "\" " + encode_options + " " + get_temp_file(codec)
     logger.error(command)
     ret = os.system(command)
     logger.warning("ret: "+str(ret))
@@ -153,12 +156,19 @@ def get_temp_file(template):
     return ret
 
 def generate_output_path(videofile, codec):
+    global DST_ROOT
+    global SRC_ROOT
     fname = os.path.splitext(os.path.basename(videofile))[0]+"_" + codec + "." + CONTAINERS[codec]
-    targetdir=os.path.dirname(videofile)+os.path.sep+codec
+    targetdir=os.path.dirname(videofile)+os.path.sep
+    if not DST_ROOT:
+        targetdir = targetdir + codec 
+    if DST_ROOT:
+        targetdir = targetdir.replace(SRC_ROOT, DST_ROOT)
     ret = os.path.join(targetdir,fname)
     return ret
 
 def parse_arguments():
+    global DST_ROOT
     parser = argparse.ArgumentParser(description="Transcodes videos in a folder")
     parser.add_argument("-t","--templates", help="Available templates: " + str(list(CODECS.keys())))
     parser.add_argument("-i","--input", help="Input file/directory")
@@ -167,6 +177,7 @@ def parse_arguments():
     parser.add_argument("-s","--show", help="Show available encoding templates", action="count")
     parser.add_argument("-f","--force", help="Re-encode already encoded videos", action="count")
     parser.add_argument("-p","--paranoid", help="Paranoid skipping", action="count")
+    parser.add_argument("-r","--root", help="Copies the encoded file into an other root folder")
     args = parser.parse_args()
     
     if not args.input and not args.show:
@@ -254,10 +265,12 @@ def main():
     global TASK_LIST
     global FORCE_ENCODE
     global PARANOID
+    global DST_ROOT
+    global SRC_ROOT
     
     args = parse_arguments()    
     
-    inputParam = args.input
+    inputParam = (args.input + os.path.sep).replace(os.path.sep*2, os.path.sep)
     
     if args.temppath:
         TEMPPATH = args.temppath
@@ -303,6 +316,9 @@ def main():
     if args.paranoid:
         PARANOID = True
     
+    if args.root:
+        DST_ROOT = (args.root + os.path.sep).replace(os.path.sep*2, os.path.sep)
+        
     global logger 
     logger = config_logger(LOGFILE)
     print("Selected codecs: ", SELECTED_CODECS)
@@ -313,6 +329,7 @@ def main():
             process_video(c, inputParam)
     
     if os.path.isdir(inputParam):
+        SRC_ROOT = inputParam
         logger.error("Folder processing: "+inputParam)
         collect_videos(inputParam)
         print_list(FILES,"Video List")
