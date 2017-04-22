@@ -37,6 +37,7 @@ CONTAINERS["x264_aac"]="mp4"
 
 POSTS = list("_" + post for post in CODECS.keys())
 POSTS.append("_enc")
+FAILED_VIDEOS = []
 SELECTED_CODECS = []
 FILES = []
 FORCE_ENCODE = False
@@ -98,20 +99,17 @@ def collect_videos(dir):
                     print("adding: " + file)
                     FILES.append(os.path.join(root,file))
 
-# print/write out the found videos
-def print_videolist():
-    for file in FILES:
-            logger.error(file)
-
-def print_tasklist():
+def get_tasklist():
+    lst = []
     for file in FILES:
         for c in SELECTED_CODECS:
             targetfile = generate_output_path(file, c)
             if FORCE_ENCODE:
-                logger.error(file + " - " + c + " (forced)")
+                lst.append(file + " - " + c + " (forced)")
                 continue
             if not os.path.isfile(targetfile):
-                logger.error(file + " - " + c)
+                lst.append(file + " - " + c)
+    return lst
 
 # prepare the output filenames and start the encoding
 def process_folder( folder ):
@@ -123,6 +121,9 @@ def process_folder( folder ):
             process_video(c,file)
 
 def process_video(codec, videofile):
+    global FAILED_VIDEOS
+    global FORCE_ENCODE
+    
     targetfile = generate_output_path(videofile,codec)
     # file exists
     if os.path.isfile(targetfile) and  not FORCE_ENCODE:
@@ -144,6 +145,7 @@ def process_video(codec, videofile):
         move_temp(get_temp_file(codec),targetfile, olddate)
     else:
         logger.warning("Failed to encode video: " + videofile + " - " + codec + " ret: " + str(ret))
+        FAILED_VIDEOS.append(videofile)
 
 def get_temp_file(template):
     ret = TEMPPATH + os.path.sep + TEMPFILE +'.' + CONTAINERS[template]
@@ -225,6 +227,21 @@ def read_config(file):
             TASK_LIST=TEMPPATH + os.path.sep + "list.txt" 
         if 'extensions_filter' in d:
             EXTENSIONS = tuple(d["extensions_filter"])
+
+def print_list(lst, title):
+    
+    if len(lst) > 0:
+        max = 0
+        for video in lst:
+            if len(video) > max:
+                max = len(video)
+        max += 2
+        if (max - len(title)) % 2 == 0: max += 1
+        half = int((max - len(title)) / 2)        
+        logger.warning("-"*half + " "+title+" "+ "-"*half)
+        for video in sorted(lst):
+            logger.warning('| ' + video + ' '*(max-len(video)-2) + '|')
+        logger.warning('-'*int(max+1))
             
 def main():
     read_config('config.json')
@@ -299,15 +316,12 @@ def main():
     if os.path.isdir(inputParam):
         logger.error("Folder processing: "+inputParam)
         collect_videos(inputParam)
-        logger.error("--- Video List ---")
-        print_videolist()
-        logger.error("------------------")
+        print_list(FILES,"Video List")
         my_input("Press a key to continue...")
-        logger.error("--- Task List ---")
-        print_tasklist()
-        logger.error("-----------------")
+        print_list(get_tasklist(),"Task List")
         my_input("Press a key to continue...")
         process_folder(inputParam)
+        print_list(FAILED_VIDEOS,'Failed Videos')
         logger.error("Exit.")
 
 main()
