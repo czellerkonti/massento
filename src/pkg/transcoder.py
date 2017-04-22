@@ -129,6 +129,12 @@ def process_video(codec, videofile):
         logger.error(targetfile + " has been already transcoded")
         return -1
     
+    if PARANOID and any(os.path.isfile(generate_output_path(videofile,x)) for x in CODECS.keys()):
+        logger.error(videofile + ' has been already transcoded with an other template, PARANOID mode is on')
+        return -1 
+    #        logger.error(videofile + " has been already transcoded with an other template!")
+     #       return -2
+    
     if FORCE_ENCODE: logger.warning("Forcing re-encode: " + videofile)
     
     ret = encode(codec,videofile)
