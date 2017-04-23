@@ -15,6 +15,8 @@ if py_version == 2:
 
 # logs the process here
 FFMPEG="d:\\Tools\\ffmpeg-3.2.4-win64-shared\\bin\\ffmpeg.exe"
+FFPROBE="d:\\Tools\\ffmpeg-3.2.4-win64-shared\\bin\\ffprobe.exe"
+FFPROBE_OPTS = "-v error -select_streams v:0 -show_format -show_streams  -of default=noprint_wrappers=1"
 #FFMPEG="ffmpeg"
 #TEMPPATH="/mnt/data/tmp"
 TEMPPATH="C:\\tmp\\"
@@ -101,9 +103,10 @@ def encode_test( codec, inputvideo, outputvideo ):
     return
 
 def has_been_encoded(video, identifiers):
-    codec_tag = get_codec_tag(video).lower()
-    encoder = get_encoder(video).lower()
-    if( any(identifier.lower() in codec_tag for identifier in identifiers) or any(identifier in encoder for identifier in identifiers) ):
+    #codec_tag = get_codec_tag(video).lower()
+    #encoder = get_encoder(video).lower()
+    video_details = get_video_details(video).lower()
+    if(  any(identifier in video_details for identifier in identifiers) ):
         return True
     return False
 
@@ -238,9 +241,10 @@ def read_config(file):
     global LOGFILE
     global TEMPFILE
     global TASK_LIST
-    global EXTENSIONS;
-    global POSTS;
-    global ANA
+    global EXTENSIONS
+    global POSTS
+    global FFPROBE
+    global FFPROBE_OPTS
     
     with open(file) as data:
         d = json.load(data)
@@ -263,6 +267,10 @@ def read_config(file):
             EXTENSIONS = tuple(d["extensions_filter"])
         if 'encode_identifiers' in d:
             ENCODE_IDENTIFIERS = tuple(d["encode_identifiers"])
+        if 'ffprobe' in d:
+            FFPROBE = str(d["ffprobe"])
+        if 'ffprobe_opts' in d:
+            FFPROBE_OPTS = str(d["ffprobe_opts"])    
 
 def print_list(lst, title):
     
@@ -280,7 +288,7 @@ def print_list(lst, title):
         logger.warning('-'*int(max+1))
 
 def get_codec_tag(file):
-    command = "ffprobe -v error -select_streams v:0  -show_format -show_entries format=codec_tag_string -of default=noprint_wrappers=1 \"" + file + "\""
+    command = FFPROBE + " -v error -select_streams v:0  -show_format -show_entries format=codec_tag_string -of default=noprint_wrappers=1 \"" + file + "\""
     ret = subprocess.check_output(command, shell=True)
     ret = str(ret)
     ret = ret.replace('\n', '').replace('\r', '')
@@ -288,12 +296,21 @@ def get_codec_tag(file):
     return ret
     
 def get_encoder(file):
-    command = "ffprobe -v error -select_streams v:0 -show_entries stream=codec_tag_string -of default=noprint_wrappers=1 \"" + file + "\""
+    command = FFPROBE + " -v error -select_streams v:0 -show_entries stream=codec_tag_string -of default=noprint_wrappers=1 \"" + file + "\""
     ret = subprocess.check_output(command, shell=True)
     ret = str(ret)
     ret = ret.replace('\n', '').replace('\r', '')
     #print(ret)
     return ret
+
+def get_video_details(file):
+    command = str(FFPROBE) + " " + str(FFPROBE_OPTS) + " \"" + file + "\""
+    ret = subprocess.check_output(command, shell=True)
+    ret = str(ret)
+    ret = ret.replace('\n', '').replace('\r', '')
+    #print(ret)
+    return ret
+    
 
 def main():
     read_config('config.json')

@@ -30,8 +30,9 @@
 		}
 	},
 	"ffmpeg":		"ffmpeg",
+	"ffprobe":		"ffprobe",
+	"ffprobe_opts":	"-v error -select_streams v:0 -show_format -show_streams  -of default=noprint_wrappers=1",
 	"temppath":		"C:\\tmp\\",
 	"extensions_filter": ["avi","mpg","mpeg","mpv","mp4","mkv","mov"],
 	"encode_identifiers": ["xvid","mplayer"]
-	
 }
