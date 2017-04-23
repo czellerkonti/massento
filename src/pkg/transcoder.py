@@ -4,7 +4,7 @@ Created on 10.04.2017
 @author: Konstantin Czeller
 '''
 
-import sys,os,logging,shutil,argparse,platform,json
+import sys,os,logging,shutil,argparse,platform,json,subprocess
 from os import system
 
 # logs the process here
@@ -93,13 +93,16 @@ def encode_test( codec, inputvideo, outputvideo ):
     return
 
 def collect_videos(dir):
+    collection = []
     for root, dirs, files in os.walk(dir):
         for file in files:
             if str(file).lower().endswith(EXTENSIONS):
                 if  any(ext in file for ext in POSTS):
                     logger.error("Skipping - encoded file: "+os.path.join(root,file))
                 else:
+                    collection.append(os.path.join(root,file))
                     FILES.append(os.path.join(root,file))
+    return collection
 
 def get_tasklist():
     lst = []
@@ -252,7 +255,16 @@ def print_list(lst, title):
         for video in sorted(lst):
             logger.warning('| ' + video + ' '*(max-len(video)-2) + '|')
         logger.warning('-'*int(max+1))
-            
+
+def get_codec_tag(file):
+    command = "ffprobe -v error -select_streams v:0  -show_format -show_entries format=codec_tag_string -of default=noprint_wrappers=1 " + file
+    print(command)
+    return subprocess.check_output(command, shell=True)
+
+def get_encoder(file):
+    command = "ffprobe -v error -select_streams v:0 -show_entries stream=codec_tag_string -of default=noprint_wrappers=1 " + file
+    return subprocess.check_output(command, shell=True)
+
 def main():
     read_config('config.json')
     global SELECTED_CODECS
@@ -268,8 +280,7 @@ def main():
     global SRC_ROOT
     
     args = parse_arguments()    
-    
-    
+        
     inputParam = args.input
     print('Input: ' + inputParam)
     
@@ -337,7 +348,11 @@ def main():
         inputParam = ((args.input + os.path.sep).replace(os.path.sep*2, os.path.sep))
         SRC_ROOT = inputParam
         logger.error("Folder processing: "+inputParam)
-        collect_videos(inputParam)
+        collection = collect_videos(inputParam)
+        for video in collection:
+           encoder = str(get_encoder(video))
+           codec = str(get_codec_tag(video))
+           print(codec + ', ' + encoder + ' - ' + video) 
         print_list(FILES,"Video List")
         my_input("Press a key to continue...")
         print_list(get_tasklist(),"Task List")
