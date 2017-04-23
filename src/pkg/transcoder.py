@@ -99,7 +99,6 @@ def collect_videos(dir):
                 if  any(ext in file for ext in POSTS):
                     logger.error("Skipping - encoded file: "+os.path.join(root,file))
                 else:
-                    print("adding: " + file)
                     FILES.append(os.path.join(root,file))
 
 def get_tasklist():
@@ -270,7 +269,9 @@ def main():
     
     args = parse_arguments()    
     
-    inputParam = (args.input + os.path.sep).replace(os.path.sep*2, os.path.sep)
+    
+    inputParam = args.input
+    print('Input: ' + inputParam)
     
     if args.temppath:
         TEMPPATH = args.temppath
@@ -323,12 +324,17 @@ def main():
     logger = config_logger(LOGFILE)
     print("Selected codecs: ", SELECTED_CODECS)
     
+    if not os.path.exists(inputParam):
+        print(inputParam + ' does not exist...exiting')
+        sys.exit(-1)
+        
     if os.path.isfile(inputParam):
         logger.error("File processing: \""+inputParam+"\"")
         for c in SELECTED_CODECS:
             process_video(c, inputParam)
     
     if os.path.isdir(inputParam):
+        inputParam = ((args.input + os.path.sep).replace(os.path.sep*2, os.path.sep))
         SRC_ROOT = inputParam
         logger.error("Folder processing: "+inputParam)
         collect_videos(inputParam)
