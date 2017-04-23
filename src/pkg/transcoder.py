@@ -1,3 +1,4 @@
+# encoding: utf-8
 '''
 Created on 10.04.2017
 
@@ -6,6 +7,11 @@ Created on 10.04.2017
 
 import sys,os,logging,shutil,argparse,platform,json,subprocess
 from os import system
+
+py_version = sys.version_info[0]
+if py_version == 2:
+    reload(sys)
+    sys.setdefaultencoding('utf-8')
 
 # logs the process here
 FFMPEG="d:\\Tools\\ffmpeg-3.2.4-win64-shared\\bin\\ffmpeg.exe"
@@ -44,6 +50,8 @@ FORCE_ENCODE = False
 PARANOID = False
 DST_ROOT = ""
 SRC_ROOT = ""
+ANALYZE = False
+ENCODE_IDENTIFIERS = ["xvid","mplayer"]
 
 try:
     os.remove(LOGFILE)
@@ -92,16 +100,27 @@ def move_temp( tempfile, target, date ):
 def encode_test( codec, inputvideo, outputvideo ):
     return
 
+def has_been_encoded(video, identifiers):
+    codec_tag = get_codec_tag(video).lower()
+    encoder = get_encoder(video).lower()
+    if( any(identifier.lower() in codec_tag for identifier in identifiers) or any(identifier in encoder for identifier in identifiers) ):
+        return True
+    return False
+
 def collect_videos(dir):
     collection = []
     for root, dirs, files in os.walk(dir):
         for file in files:
             if str(file).lower().endswith(EXTENSIONS):
-                if  any(ext in file for ext in POSTS):
-                    logger.error("Skipping - encoded file: "+os.path.join(root,file))
+                full_file = os.path.join(root,file)
+                if any(ext in file for ext in POSTS):
+                    logger.error("Skipping - encoded file: "+full_file)
+                    continue
+                if ANALYZE and has_been_encoded(full_file, ENCODE_IDENTIFIERS):
+                    logger.error("Skipping - analyzed as encoded file: " + full_file) 
                 else:
-                    collection.append(os.path.join(root,file))
-                    FILES.append(os.path.join(root,file))
+                    collection.append(full_file)
+                    FILES.append(full_file)
     return collection
 
 def get_tasklist():
@@ -180,6 +199,7 @@ def parse_arguments():
     parser.add_argument("-f","--force", help="Re-encode already encoded videos", action="count")
     parser.add_argument("-p","--paranoid", help="Paranoid skipping", action="count")
     parser.add_argument("-r","--root", help="Copies the encoded file into an other root folder")
+    parser.add_argument("-a","--analyze", help="Analyze video formats", action="count")
     args = parser.parse_args()
     
     if not args.input and not args.show:
@@ -220,6 +240,7 @@ def read_config(file):
     global TASK_LIST
     global EXTENSIONS;
     global POSTS;
+    global ANA
     
     with open(file) as data:
         d = json.load(data)
@@ -240,6 +261,8 @@ def read_config(file):
             TASK_LIST=TEMPPATH + os.path.sep + "list.txt" 
         if 'extensions_filter' in d:
             EXTENSIONS = tuple(d["extensions_filter"])
+        if 'encode_identifiers' in d:
+            ENCODE_IDENTIFIERS = tuple(d["encode_identifiers"])
 
 def print_list(lst, title):
     
@@ -257,13 +280,20 @@ def print_list(lst, title):
         logger.warning('-'*int(max+1))
 
 def get_codec_tag(file):
-    command = "ffprobe -v error -select_streams v:0  -show_format -show_entries format=codec_tag_string -of default=noprint_wrappers=1 " + file
-    print(command)
-    return subprocess.check_output(command, shell=True)
-
+    command = "ffprobe -v error -select_streams v:0  -show_format -show_entries format=codec_tag_string -of default=noprint_wrappers=1 \"" + file + "\""
+    ret = subprocess.check_output(command, shell=True)
+    ret = str(ret)
+    ret = ret.replace('\n', '').replace('\r', '')
+    #print(ret)
+    return ret
+    
 def get_encoder(file):
-    command = "ffprobe -v error -select_streams v:0 -show_entries stream=codec_tag_string -of default=noprint_wrappers=1 " + file
-    return subprocess.check_output(command, shell=True)
+    command = "ffprobe -v error -select_streams v:0 -show_entries stream=codec_tag_string -of default=noprint_wrappers=1 \"" + file + "\""
+    ret = subprocess.check_output(command, shell=True)
+    ret = str(ret)
+    ret = ret.replace('\n', '').replace('\r', '')
+    #print(ret)
+    return ret
 
 def main():
     read_config('config.json')
@@ -278,6 +308,7 @@ def main():
     global PARANOID
     global DST_ROOT
     global SRC_ROOT
+    global ANALYZE
     
     args = parse_arguments()    
         
@@ -330,6 +361,9 @@ def main():
     
     if args.root:
         DST_ROOT = (args.root + os.path.sep).replace(os.path.sep*2, os.path.sep)
+    
+    if args.analyze:
+        ANALYZE =  True
         
     global logger 
     logger = config_logger(LOGFILE)
@@ -349,16 +383,12 @@ def main():
         SRC_ROOT = inputParam
         logger.error("Folder processing: "+inputParam)
         collection = collect_videos(inputParam)
-        for video in collection:
-           encoder = str(get_encoder(video))
-           codec = str(get_codec_tag(video))
-           print(codec + ', ' + encoder + ' - ' + video) 
         print_list(FILES,"Video List")
         my_input("Press a key to continue...")
         print_list(get_tasklist(),"Task List")
-        my_input("Press a key to continue...")
-        process_folder(inputParam)
-        print_list(FAILED_VIDEOS,'Failed Videos')
+   #     my_input("Press a key to continue...")
+  #      process_folder(inputParam)
+ #       print_list(FAILED_VIDEOS,'Failed Videos')
         logger.error("Exit.")
 
 main()

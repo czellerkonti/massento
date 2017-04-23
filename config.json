@@ -31,6 +31,7 @@
 	},
 	"ffmpeg":		"ffmpeg",
 	"temppath":		"C:\\tmp\\",
-	"extensions_filter": ["avi","mpg","mpeg","mpv","mp4","mkv","mov"]
+	"extensions_filter": ["avi","mpg","mpeg","mpv","mp4","mkv","mov"],
+	"encode_identifiers": ["xvid","mplayer"]
 	
 }
