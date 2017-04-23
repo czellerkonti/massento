@@ -386,9 +386,9 @@ def main():
         print_list(FILES,"Video List")
         my_input("Press a key to continue...")
         print_list(get_tasklist(),"Task List")
-   #     my_input("Press a key to continue...")
-  #      process_folder(inputParam)
- #       print_list(FAILED_VIDEOS,'Failed Videos')
+        my_input("Press a key to continue...")
+        process_folder(inputParam)
+        print_list(FAILED_VIDEOS,'Failed Videos')
         logger.error("Exit.")
 
 main()
