@@ -131,7 +131,7 @@ def get_tasklist():
     for file in FILES:
         for c in SELECTED_CODECS:
             targetfile = generate_output_path(file, c)
-            if FORCE_ENCODE:
+            if FORCE_ENCODE and os.path.isfile(targetfile):
                 lst.append(file + " - " + c + " (forced)")
                 continue
             if not os.path.isfile(targetfile):
