@@ -54,6 +54,7 @@ DST_ROOT = ""
 SRC_ROOT = ""
 ANALYZE = False
 ENCODE_IDENTIFIERS = ["xvid","mplayer"]
+COPY_ONLY = False
 
 try:
     os.remove(LOGFILE)
@@ -98,6 +99,14 @@ def move_temp( tempfile, target, date ):
     shutil.move(tempfile,target)
     os.utime(target, (date, date))
     return
+
+def copy_file(source, target):
+    targetdir = os.path.dirname(target);
+    if not os.path.exists(targetdir):
+        os.makedirs(targetdir)
+    logger.warning("Copying " + source + " to " + target)
+    shutil.copy(source, target)
+    return    
 
 def encode_test( codec, inputvideo, outputvideo ):
     return
@@ -145,7 +154,10 @@ def process_folder( folder ):
         for file in FILES:
             x = x + 1
             set_window_title(str(x)  + "/" + str(len(FILES)) + " - " + file)
-            process_video(c,file)
+            if COPY_ONLY:
+                copy_file(file,generate_copy_outputpath(file))
+            else:
+                process_video(c,file)
 
 def process_video(codec, videofile):
     global FAILED_VIDEOS
@@ -179,6 +191,13 @@ def get_temp_file(template):
     print("TEMPFILE: " + ret)
     return ret
 
+def generate_copy_outputpath(videofile):
+    global DST_ROOT
+    global SRC_ROOT 
+    if DST_ROOT:
+        targetdir = videofile.replace(SRC_ROOT, DST_ROOT)
+    return targetdir
+
 def generate_output_path(videofile, codec):
     global DST_ROOT
     global SRC_ROOT
@@ -203,6 +222,7 @@ def parse_arguments():
     parser.add_argument("-p","--paranoid", help="Paranoid skipping", action="count")
     parser.add_argument("-r","--root", help="Copies the encoded file into an other root folder")
     parser.add_argument("-a","--analyze", help="Analyze video formats", action="count")
+    parser.add_argument("-c","--copy", help="copy files only, use it only with -r", action="count")
     args = parser.parse_args()
     
     if not args.input and not args.show:
@@ -326,6 +346,7 @@ def main():
     global DST_ROOT
     global SRC_ROOT
     global ANALYZE
+    global COPY_ONLY
     
     args = parse_arguments()    
         
@@ -382,6 +403,13 @@ def main():
     if args.analyze:
         ANALYZE =  True
         
+    if args.copy:
+        if not args.root:
+            print("With -c you must use -r!")
+            print("Exiting...")
+            sys.exit(1)
+        COPY_ONLY = True
+             
     global logger 
     logger = config_logger(LOGFILE)
     print("Selected codecs: ", SELECTED_CODECS)
