@@ -5,7 +5,7 @@ Created on 10.04.2017
 @author: Konstantin Czeller
 '''
 
-import sys,os,logging,shutil,argparse,platform,json,subprocess
+import sys,os,logging,shutil,argparse,platform,json,subprocess,datetime
 from os import system
 
 py_version = sys.version_info[0]
@@ -23,6 +23,7 @@ TEMPPATH="C:\\tmp\\"
 LOGFILE=TEMPPATH + os.path.sep + "actual.txt"
 TEMPFILE="temp"
 TASK_LIST=TEMPPATH + os.path.sep + "list.txt"
+
 
 EXTENSIONS=('avi','mpg','mpeg','mpv','mp4','mkv','mov')
 EXTRAOPTS="-v info -y -i"
@@ -48,6 +49,7 @@ POSTS.append("_enc")
 FAILED_VIDEOS = []
 SELECTED_CODECS = []
 FILES = []
+STATS = []
 FORCE_ENCODE = False
 PARANOID = False
 DST_ROOT = ""
@@ -56,12 +58,44 @@ ANALYZE = False
 ENCODE_IDENTIFIERS = ["xvid","mplayer"]
 COPY_ONLY = False
 
+
 try:
     os.remove(LOGFILE)
     #os.remove(TEMPFILE)
     os.remove(TASK_LIST)
 except (OSError) as e:
-    print ("")  
+    print ("")
+
+class Video:
+
+    def __init__(self, origpath, targetpath, codec):
+        if not os.path.exists(origpath):
+            self.existing = False
+        else:
+            self.sourcePath = origpath
+            self.targetPath = targetpath
+        self.execCode = -99
+        self.startDateTime = 0;
+        self.stopDateTime = 0;
+
+    def setStartTime(self):
+        self.startDateTime = datetime.datetime.now()
+
+    def setStopTime(self):
+        self.stopDateTime = datetime.datetime.now()
+
+    def setExecCode(self,execCode):
+        self.execCode = execCode
+
+    def getStartTime(self):
+        if self.startDateTime == 0:
+            return datetime.datetime.now()
+        return self.startDate
+
+    def getStopTime(self):
+        if self.stopDateTime == 0:
+            return datetime.datetime.now()
+        return self.stopDateTime
 
 def config_logger(logfile):
     logFormatter = logging.Formatter('%(asctime)s %(message)s',datefmt=LOG_DATE_FORMAT)
@@ -106,7 +140,7 @@ def copy_file(source, target):
         os.makedirs(targetdir)
     logger.warning("Copying " + source + " to " + target)
     shutil.copy(source, target)
-    return    
+    return
 
 def encode_test( codec, inputvideo, outputvideo ):
     return
@@ -120,7 +154,6 @@ def has_been_encoded(video, identifiers):
     return False
 
 def collect_videos(dir):
-    collection = []
     for root, dirs, files in os.walk(dir):
         for file in files:
             if str(file).lower().endswith(EXTENSIONS):
@@ -129,11 +162,9 @@ def collect_videos(dir):
                     logger.error("Skipping - encoded file: "+full_file)
                     continue
                 if ANALYZE and has_been_encoded(full_file, ENCODE_IDENTIFIERS):
-                    logger.error("Skipping - analyzed as encoded file: " + full_file) 
+                    logger.error("Skipping - analyzed as encoded file: " + full_file)
                 else:
-                    collection.append(full_file)
                     FILES.append(full_file)
-    return collection
 
 def get_tasklist():
     lst = []
@@ -148,6 +179,7 @@ def get_tasklist():
     return lst
 
 # prepare the output filenames and start the encoding
+# folder
 def process_folder( folder ):
     x = 0
     for c in SELECTED_CODECS:
@@ -157,27 +189,36 @@ def process_folder( folder ):
             if COPY_ONLY:
                 copy_file(file,generate_copy_outputpath(file))
             else:
-                process_video(c,file)
+                video = process_video(c,file)
+                STATS.append(video) 
 
 def process_video(codec, videofile):
     global FAILED_VIDEOS
     global FORCE_ENCODE
-    
+
     targetfile = generate_output_path(videofile,codec)
+    video_object = Video(videofile, targetfile, codec)
     # file exists
     if os.path.isfile(targetfile) and  not FORCE_ENCODE:
         logger.error(targetfile + " has been already transcoded")
-        return -1
-    
+        video_object.setExecCode(0)
+        return video_object
+
     if PARANOID and any(os.path.isfile(generate_output_path(videofile,x)) for x in CODECS.keys()):
         logger.error(videofile + ' has been already transcoded with an other template, PARANOID mode is on')
-        return -1 
+        video_object.setExecCode(0)
+        return video_object
+
     #        logger.error(videofile + " has been already transcoded with an other template!")
      #       return -2
-    
+
     if FORCE_ENCODE: logger.warning("Forcing re-encode: " + videofile)
     
+    video_object.setStartTime
     ret = encode(codec,videofile)
+    video_object.setStopTime
+    video_object.setExecCode(ret)
+    
     if ret == 0:
         logger.warning("done")
         olddate = os.path.getmtime(videofile)
@@ -185,6 +226,7 @@ def process_video(codec, videofile):
     else:
         logger.warning("Failed to encode video: " + videofile + " - " + codec + " ret: " + str(ret))
         FAILED_VIDEOS.append(videofile)
+    return video_object
 
 def get_temp_file(template):
     ret = TEMPPATH + os.path.sep + TEMPFILE +'.' + CONTAINERS[template]
@@ -193,7 +235,7 @@ def get_temp_file(template):
 
 def generate_copy_outputpath(videofile):
     global DST_ROOT
-    global SRC_ROOT 
+    global SRC_ROOT
     if DST_ROOT:
         targetdir = videofile.replace(SRC_ROOT, DST_ROOT)
     return targetdir
@@ -204,7 +246,7 @@ def generate_output_path(videofile, codec):
     fname = os.path.splitext(os.path.basename(videofile))[0]+"_" + codec + "." + CONTAINERS[codec]
     targetdir=os.path.dirname(videofile)+os.path.sep
     if not DST_ROOT:
-        targetdir = targetdir + codec 
+        targetdir = targetdir + codec
     if DST_ROOT:
         targetdir = targetdir.replace(SRC_ROOT, DST_ROOT)
     ret = os.path.join(targetdir,fname)
@@ -224,7 +266,7 @@ def parse_arguments():
     parser.add_argument("-a","--analyze", help="Analyze video formats", action="count")
     parser.add_argument("-c","--copy", help="copy files only, use it only with -r", action="count")
     args = parser.parse_args()
-    
+
     if not args.input and not args.show:
         print("Input not found.")
         parser.print_help()
@@ -237,7 +279,7 @@ def cleanup_logs():
         os.remove(TEMPFILE)
         os.remove(TASK_LIST)
     except (OSError) as e:
-        print ("")  
+        print ("")
 
 def set_window_title(newTitle):
     systemType = platform.system()
@@ -245,10 +287,10 @@ def set_window_title(newTitle):
         sys.stdout.write("\x1b]2;" + newTitle + "\x07")
     elif systemType == "Windows":
         system("title "+newTitle)
-        
+
 def my_input(message):
     py_version = sys.version_info[0]
-    
+
     if py_version == 2:
         return raw_input(message)
     if py_version == 3:
@@ -265,7 +307,7 @@ def read_config(file):
     global POSTS
     global FFPROBE
     global FFPROBE_OPTS
-    
+
     with open(file) as data:
         d = json.load(data)
         if 'templates' in d:
@@ -282,7 +324,7 @@ def read_config(file):
         if 'temppath' in d:
             TEMPPATH = d["temppath"]
             LOGFILE=TEMPPATH + os.path.sep + "actual.txt"
-            TASK_LIST=TEMPPATH + os.path.sep + "list.txt" 
+            TASK_LIST=TEMPPATH + os.path.sep + "list.txt"
         if 'extensions_filter' in d:
             EXTENSIONS = tuple(d["extensions_filter"])
         if 'encode_identifiers' in d:
@@ -290,10 +332,10 @@ def read_config(file):
         if 'ffprobe' in d:
             FFPROBE = str(d["ffprobe"])
         if 'ffprobe_opts' in d:
-            FFPROBE_OPTS = str(d["ffprobe_opts"])    
+            FFPROBE_OPTS = str(d["ffprobe_opts"])
 
 def print_list(lst, title):
-    
+
     if len(lst) > 0:
         max = 0
         for video in lst:
@@ -301,7 +343,7 @@ def print_list(lst, title):
                 max = len(video)
         max += 2
         if (max - len(title)) % 2 == 0: max += 1
-        half = int((max - len(title)) / 2)        
+        half = int((max - len(title)) / 2)
         logger.warning("-"*half + " "+title+" "+ "-"*half)
         for video in sorted(lst):
             logger.warning('| ' + video + ' '*(max-len(video)-2) + '|')
@@ -314,7 +356,7 @@ def get_codec_tag(file):
     ret = ret.replace('\n', '').replace('\r', '')
     #print(ret)
     return ret
-    
+
 def get_encoder(file):
     command = FFPROBE + " -v error -select_streams v:0 -show_entries stream=codec_tag_string -of default=noprint_wrappers=1 \"" + file + "\""
     ret = subprocess.check_output(command, shell=True)
@@ -330,7 +372,17 @@ def get_video_details(file):
     ret = ret.replace('\n', '').replace('\r', '')
     #print(ret)
     return ret
-    
+
+def write_stats(stats):
+    stat_file = open(TEMPPATH + os.path.sep + "stats.csv", "w")
+    stat_file.write("Video file;Start Time;End Time;Duration;Orig Size;Encoded Size;Ratio\n")
+    for video in STATS:
+        print(datetime.datetime.now())
+        ratio = os.path.getsize(video.targetPath) / os.path.getsize(video.sourcePath)
+        row = video.sourcePath + ";" + video.getStartTime().strftime(LOG_DATE_FORMAT) + ";" + video.getStopTime().strftime(LOG_DATE_FORMAT) + ";" + str(video.getStopTime() - video.getStartTime()) + ";" + str(os.path.getsize(video.sourcePath)) + ";" + str(os.path.getsize(video.targetPath)) + ";" + str(ratio) + "\n"
+        
+        stat_file.write(row)
+    stat_file.close()
 
 def main():
     read_config('config.json')
@@ -347,20 +399,20 @@ def main():
     global SRC_ROOT
     global ANALYZE
     global COPY_ONLY
-    
-    args = parse_arguments()    
-        
+
+    args = parse_arguments()
+
     inputParam = args.input
     print('Input: ' + inputParam)
-    
+
     if args.temppath:
         TEMPPATH = args.temppath
         LOGFILE = TEMPPATH + os.path.sep + "actual.txt"
         TASK_LIST = TEMPPATH + os.path.sep + "list.txt"
-        
+
     if args.encoder:
         FFMPEG = args.encoder
-        
+
     if not args.templates:
         SELECTED_CODECS = CODECS.keys()
     else:
@@ -378,11 +430,11 @@ def main():
             print("Known codecs: " + str(CODECS.keys()))
             print("Exiting...")
             sys.exit(1)
-    
+
     if args.show:
         print("Available templates")
         print("")
-        for key in CODECS.keys():    
+        for key in CODECS.keys():
             print(key+":    " + CODECS.get(key) + ' ('+CONTAINERS.get(key) + ')')
         print()
         print("FFMPEG: " + FFMPEG)
@@ -390,50 +442,52 @@ def main():
         print("EXTENSION FILTER: " + str(EXTENSIONS))
         print("POSTS: " + str(POSTS))
         sys.exit(1)
-    
+
     if args.force:
         FORCE_ENCODE = True
-    
+
     if args.paranoid:
         PARANOID = True
-    
+
     if args.root:
         DST_ROOT = (args.root + os.path.sep).replace(os.path.sep*2, os.path.sep)
-    
+
     if args.analyze:
         ANALYZE =  True
-        
+
     if args.copy:
         if not args.root:
             print("With -c you must use -r!")
             print("Exiting...")
             sys.exit(1)
         COPY_ONLY = True
-             
-    global logger 
+
+    global logger
     logger = config_logger(LOGFILE)
     print("Selected codecs: ", SELECTED_CODECS)
-    
+
     if not os.path.exists(inputParam):
         print(inputParam + ' does not exist...exiting')
         sys.exit(-1)
-        
+
     if os.path.isfile(inputParam):
         logger.error("File processing: \""+inputParam+"\"")
         for c in SELECTED_CODECS:
             process_video(c, inputParam)
-    
+
     if os.path.isdir(inputParam):
         inputParam = ((args.input + os.path.sep).replace(os.path.sep*2, os.path.sep))
         SRC_ROOT = inputParam
         logger.error("Folder processing: "+inputParam)
-        collection = collect_videos(inputParam)
+        collect_videos(inputParam)
         print_list(FILES,"Video List")
         my_input("Press a key to continue...")
         print_list(get_tasklist(),"Task List")
         my_input("Press a key to continue...")
         process_folder(inputParam)
         print_list(FAILED_VIDEOS,'Failed Videos')
+        write_stats(STATS)
         logger.error("Exit.")
 
 main()
+
