@@ -21,6 +21,7 @@ FFPROBE_OPTS = "-v error -select_streams v:0 -show_format -show_streams  -of def
 #TEMPPATH="/mnt/data/tmp"
 TEMPPATH="C:\\tmp\\"
 LOGFILE=TEMPPATH + os.path.sep + "actual.txt"
+
 TEMPFILE="temp"
 TASK_LIST=TEMPPATH + os.path.sep + "list.txt"
 
@@ -29,6 +30,8 @@ EXTENSIONS=('avi','mpg','mpeg','mpv','mp4','mkv','mov')
 EXTRAOPTS="-v info -y -i"
 
 LOG_DATE_FORMAT="%Y-%m-%d %H:%M:%S"
+STATFILE_NAME_DATE="%Y%m%d-%H-%M-%S"
+STATFILE=TEMPPATH + os.path.sep + "stats_" + datetime.datetime.now().strftime(STATFILE_NAME_DATE) + ".csv"
 
 CODECS = {}
 CODECS["mp3"]="-c:v copy -c:a libmp3lame -q:a 5 -movflags +faststart"
@@ -74,6 +77,7 @@ class Video:
         else:
             self.sourcePath = origpath
             self.targetPath = targetpath
+            self.codec = codec
         self.execCode = -99
         self.startDateTime = 0;
         self.stopDateTime = 0;
@@ -90,7 +94,7 @@ class Video:
     def getStartTime(self):
         if self.startDateTime == 0:
             return datetime.datetime.now()
-        return self.startDate
+        return self.startDateTime
 
     def getStopTime(self):
         if self.stopDateTime == 0:
@@ -181,6 +185,7 @@ def get_tasklist():
 # prepare the output filenames and start the encoding
 # folder
 def process_folder( folder ):
+    init_stats_file()
     x = 0
     for c in SELECTED_CODECS:
         for file in FILES:
@@ -190,7 +195,8 @@ def process_folder( folder ):
                 copy_file(file,generate_copy_outputpath(file))
             else:
                 video = process_video(c,file)
-                STATS.append(video) 
+                STATS.append(video)
+                write_row(generate_csv_row(video))
 
 def process_video(codec, videofile):
     global FAILED_VIDEOS
@@ -213,12 +219,12 @@ def process_video(codec, videofile):
      #       return -2
 
     if FORCE_ENCODE: logger.warning("Forcing re-encode: " + videofile)
-    
-    video_object.setStartTime
+
+    video_object.setStartTime()
     ret = encode(codec,videofile)
-    video_object.setStopTime
+    video_object.setStopTime()
     video_object.setExecCode(ret)
-    
+
     if ret == 0:
         logger.warning("done")
         olddate = os.path.getmtime(videofile)
@@ -374,15 +380,30 @@ def get_video_details(file):
     return ret
 
 def write_stats(stats):
-    stat_file = open(TEMPPATH + os.path.sep + "stats.csv", "w")
-    stat_file.write("Video file;Start Time;End Time;Duration;Orig Size;Encoded Size;Ratio\n")
+    init_stats_file()
     for video in STATS:
-        print(datetime.datetime.now())
-        ratio = os.path.getsize(video.targetPath) / os.path.getsize(video.sourcePath)
-        row = video.sourcePath + ";" + video.getStartTime().strftime(LOG_DATE_FORMAT) + ";" + video.getStopTime().strftime(LOG_DATE_FORMAT) + ";" + str(video.getStopTime() - video.getStartTime()) + ";" + str(os.path.getsize(video.sourcePath)) + ";" + str(os.path.getsize(video.targetPath)) + ";" + str(ratio) + "\n"
-        
-        stat_file.write(row)
+        write_row(generate_csv_row(video))
+
+def write_row(row):
+    stat_file = open(STATFILE, "a")
+    stat_file.write(row)
     stat_file.close()
+
+def init_stats_file():
+    try:
+        os.remove(STATFILE)
+    except (OSError) as e:
+        pass
+    stat_file = open(STATFILE, "w")
+    stat_file.write("Video file;Codec;Exec code;Start Time;End Time;Duration;Orig Size;Encoded Size;Ratio\n")
+    stat_file.close()
+
+def generate_csv_row(video):
+    ratio = os.path.getsize(video.targetPath) / os.path.getsize(video.sourcePath) * 100
+    ratio = "{0:.2f}".format(ratio)
+    ratio = ratio + "%"
+    row = video.sourcePath + ";" +video.codec+";"+str(video.execCode)+";"+ video.getStartTime().strftime(LOG_DATE_FORMAT) + ";" + video.getStopTime().strftime(LOG_DATE_FORMAT) + ";" + str(video.getStopTime() - video.getStartTime()) + ";" + str(os.path.getsize(video.sourcePath)) + ";" + str(os.path.getsize(video.targetPath)) + ";" + str(ratio) + "\n"
+    return row
 
 def main():
     read_config('config.json')
@@ -490,4 +511,3 @@ def main():
         logger.error("Exit.")
 
 main()
-
