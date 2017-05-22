@@ -101,6 +101,14 @@ class Video:
             return datetime.datetime.now()
         return self.stopDateTime
 
+def GetHumanReadableSize(size,precision=2):
+    suffixes=['B','KB','MB','GB','TB']
+    suffixIndex = 0
+    while size > 1024 and suffixIndex < 4:
+        suffixIndex += 1 #increment the index of the suffix
+        size = size/1024.0 #apply the division
+    return "%.*f%s"%(precision,size,suffixes[suffixIndex])
+
 def config_logger(logfile):
     logFormatter = logging.Formatter('%(asctime)s %(message)s',datefmt=LOG_DATE_FORMAT)
     rootLogger = logging.getLogger()
@@ -395,14 +403,34 @@ def init_stats_file():
     except (OSError) as e:
         pass
     stat_file = open(STATFILE, "w")
-    stat_file.write("Video file;Codec;Exec code;Start Time;End Time;Duration;Orig Size;Encoded Size;Ratio\n")
+    stat_file.write("Video file;" +
+                    "Codec;" +
+                    "Exec code;" +
+                    "Start Time;" +
+                    "End Time;" +
+                    "Duration;" +
+                    "Orig Size;" +
+                    "Encoded Size;" +
+                    "Orig;" +
+                    "Encoded;" +
+                    "Ratio\n")
     stat_file.close()
 
 def generate_csv_row(video):
     ratio = os.path.getsize(video.targetPath) / os.path.getsize(video.sourcePath) * 100
     ratio = "{0:.2f}".format(ratio)
-    ratio = ratio + "%"
-    row = video.sourcePath + ";" +video.codec+";"+str(video.execCode)+";"+ video.getStartTime().strftime(LOG_DATE_FORMAT) + ";" + video.getStopTime().strftime(LOG_DATE_FORMAT) + ";" + str(video.getStopTime() - video.getStartTime()) + ";" + str(os.path.getsize(video.sourcePath)) + ";" + str(os.path.getsize(video.targetPath)) + ";" + str(ratio) + "\n"
+    ratio = ratio.replace('.',',')
+    row = (video.sourcePath + ";" +
+            video.codec+";" +
+            str(video.execCode) + ";" + 
+            video.getStartTime().strftime(LOG_DATE_FORMAT) + ";" + 
+            video.getStopTime().strftime(LOG_DATE_FORMAT) + ";" + 
+            str(video.getStopTime() - video.getStartTime()) + ";" + 
+            str(os.path.getsize(video.sourcePath)) + ";" + 
+            str(os.path.getsize(video.targetPath))+";" + 
+            GetHumanReadableSize(os.path.getsize(video.sourcePath)) + ";" + 
+            GetHumanReadableSize(os.path.getsize(video.targetPath)) + ";" + 
+            str(ratio) + "\n")
     return row
 
 def main():
@@ -420,7 +448,8 @@ def main():
     global SRC_ROOT
     global ANALYZE
     global COPY_ONLY
-
+    global STATFILE
+    
     args = parse_arguments()
 
     inputParam = args.input
@@ -486,6 +515,9 @@ def main():
     global logger
     logger = config_logger(LOGFILE)
     print("Selected codecs: ", SELECTED_CODECS)
+
+    STATFILE=TEMPPATH + os.path.sep + "stats_" + datetime.datetime.now().strftime(STATFILE_NAME_DATE) + ".csv"
+
 
     if not os.path.exists(inputParam):
         print(inputParam + ' does not exist...exiting')
