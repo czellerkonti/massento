@@ -6,117 +6,39 @@ Created on 10.04.2017
 '''
 
 import sys,os,logging,shutil,argparse,datetime,utils,config
-Config = config.Configuration
+from config import Configuration
 from utils import my_input
 from encstat import Statistics
+from classes import ConfigLogger
 
-logger = None
 py_version = sys.version_info[0]
-
-
-class Video:
-
-    def __init__(self, origpath, targetpath, codec):
-        if not os.path.exists(origpath):
-            self.existing = False
-        else:
-            self.sourcePath = origpath
-            self.targetPath = targetpath
-            self.codec = codec
-        self.execCode = -99
-        self.startDateTime = 0;
-        self.stopDateTime = 0;
-
-    def setStartTime(self):
-        self.startDateTime = datetime.datetime.now()
-
-    def setStopTime(self):
-        self.stopDateTime = datetime.datetime.now()
-
-    def setExecCode(self,execCode):
-        self.execCode = execCode
-
-    def getStartTime(self):
-        if self.startDateTime == 0:
-            return datetime.datetime.now()
-        return self.startDateTime
-
-    def getStopTime(self):
-        if self.stopDateTime == 0:
-            return datetime.datetime.now()
-        return self.stopDateTime
-
-
-
-def config_logger(logfile):
-    logFormatter = logging.Formatter('%(asctime)s %(message)s',datefmt=Config.LOG_DATE_FORMAT)
-    rootLogger = logging.getLogger()
-
-    fileHandler = logging.FileHandler(logfile)
-    fileHandler.setFormatter(logFormatter)
-    fileHandler.setLevel(logging.INFO)
-    rootLogger.addHandler(fileHandler)
-
-    consoleHandler = logging.StreamHandler(sys.stdout)
-    consoleHandler.setFormatter(logFormatter)
-    consoleHandler.setLevel(logging.WARNING)
-    rootLogger.addHandler(consoleHandler)
-    rootLogger.setLevel(logging.WARNING)
-    return rootLogger
-
-def encode(codec, inputvideo):
-    if codec not in CODECS.keys():
-        logger.error("Unknown codec: "+codec)
-        return -1
-    encode_options = CODECS.get(codec)
-    logger.warning("Transcoding "+inputvideo+" - "+codec)
-    command = FFMPEG + " " + EXTRAOPTS + " \"" + inputvideo + "\" " + encode_options + " " + get_temp_file(codec)
-    logger.error(command)
-    ret = os.system(command)
-    logger.warning("ret: "+str(ret))
-    return ret
-
-def move_temp( tempfile, target, date ):
-    targetdir = os.path.dirname(target)
-    if not os.path.exists(targetdir):
-        os.makedirs(targetdir)
-    logger.warning("Moving")
-    shutil.move(tempfile,target)
-    os.utime(target, (date, date))
-    return
-
-def copy_file(source, target):
-    targetdir = os.path.dirname(target);
-    if not os.path.exists(targetdir):
-        os.makedirs(targetdir)
-    logger.warning("Copying " + source + " to " + target)
-    shutil.copy(source, target)
-    return
+l = ConfigLogger('C:\\tmp\\logfile.txt',Configuration.log_date_format)
+logger = l.getLogger()
 
 def encode_test( codec, inputvideo, outputvideo ):
     return
 
-
-
-def collect_videos(dir):
+def collect_videos(dir, extensions, posts, encode_identifiers, analyze):
+    files = []
     for root, dirs, files in os.walk(dir):
         for file in files:
-            if str(file).lower().endswith(Config.EXTENSIONS):
+            if str(file).lower().endswith(extensions):
                 full_file = os.path.join(root,file)
-                if any(ext in file for ext in Config.POSTS):
+                if any(ext in file for ext in posts):
                     logger.error("Skipping - encoded file: "+full_file)
                     continue
-                if Config.ANALYZE and has_been_encoded(full_file, Config.ENCODE_IDENTIFIERS):
+                if analyze and has_been_encoded(full_file, encode_identifiers):
                     logger.error("Skipping - analyzed as encoded file: " + full_file)
                 else:
-                    FILES.append(full_file)
+                    files.append(full_file)
+    return files
 
-def get_tasklist():
+def get_tasklist(files, codecs, force):
     lst = []
-    for file in FILES:
-        for c in SELECTED_CODECS:
+    for file in files:
+        for c in codecs:
             targetfile = generate_output_path(file, c)
-            if FORCE_ENCODE and os.path.isfile(targetfile):
+            if force and os.path.isfile(targetfile):
                 lst.append(file + " - " + c + " (forced)")
                 continue
             if not os.path.isfile(targetfile):
@@ -125,14 +47,14 @@ def get_tasklist():
 
 # prepare the output filenames and start the encoding
 # folder
-def process_folder( folder ):
+def process_folder( files, selected_codecs, copy_only ):
     init_stats_file()
     x = 0
-    for c in SELECTED_CODECS:
-        for file in FILES:
+    for c in selected_codecs:
+        for file in files:
             x = x + 1
-            set_window_title(str(x)  + "/" + str(len(FILES)) + " - " + file)
-            if COPY_ONLY:
+            set_window_title(str(x)  + "/" + str(len(files)) + " - " + file)
+            if cony_only:
                 copy_file(file,generate_copy_outputpath(file))
             else:
                 video = process_video(c,file)
@@ -180,29 +102,19 @@ def get_temp_file(template):
     print("TEMPFILE: " + ret)
     return ret
 
-def generate_copy_outputpath(videofile):
-    global DST_ROOT
-    global SRC_ROOT
-    if DST_ROOT:
-        targetdir = videofile.replace(SRC_ROOT, DST_ROOT)
-    return targetdir
-
-def generate_output_path(videofile, codec):
-    global DST_ROOT
-    global SRC_ROOT
+def generate_output_path(videofile, codec, src_root, dst_root):
     fname = os.path.splitext(os.path.basename(videofile))[0]+"_" + codec + "." + Config.CONTAINERS[codec]
     targetdir=os.path.dirname(videofile)+os.path.sep
-    if not DST_ROOT:
+    if not dst_root:
         targetdir = targetdir + codec
-    if DST_ROOT:
-        targetdir = targetdir.replace(SRC_ROOT, DST_ROOT)
+    if dst_root:
+        targetdir = targetdir.replace(src_root, dst_root)
     ret = os.path.join(targetdir,fname)
     return ret
 
 def parse_arguments():
-    global DST_ROOT
     parser = argparse.ArgumentParser(description="Transcodes videos in a folder")
-    parser.add_argument("-t","--templates", help="Available templates: " + str(list(Config.CODECS.keys())))
+    parser.add_argument("-t","--templates", help="Available templates: " + str(list(Configuration.codecs.keys())))
     parser.add_argument("-i","--input", help="Input file/directory")
     parser.add_argument("-m","--temppath", help="Temp directory")
     parser.add_argument("-e","--encoder", help="Path to encoder binary")
@@ -213,35 +125,23 @@ def parse_arguments():
     parser.add_argument("-a","--analyze", help="Analyze video formats", action="count")
     parser.add_argument("-c","--copy", help="copy files only, use it only with -r", action="count")
     args = parser.parse_args()
-
+    
+    
     if not args.input and not args.show:
         print("Input not found.")
         parser.print_help()
         sys.exit(2)
+    
+    
     return args
-
-def print_list(lst, title):
-
-    if len(lst) > 0:
-        max = 0
-        for video in lst:
-            if len(video) > max:
-                max = len(video)
-        max += 2
-        if (max - len(title)) % 2 == 0: max += 1
-        half = int((max - len(title)) / 2)
-        logger.warning("-"*half + " "+title+" "+ "-"*half)
-        for video in sorted(lst):
-            logger.warning('| ' + video + ' '*(max-len(video)-2) + '|')
-        logger.warning('-'*int(max+1))
-
 
 def main():
     global logger
-    utils.read_config('config.json')
+    config = Configuration('config.json')
     
     args = parse_arguments()
-
+    config.process_args(args)
+    
     inputParam = args.input
     print('Input: ' + inputParam)
 
