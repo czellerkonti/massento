@@ -32,7 +32,6 @@ class Configuration:
     codecs = {codec.name:codec for codec in codecs}
     encode_identifiers = ["xvid","mplayer"]
 
-    failed_videos = []
     selected_codecs = {}
     files = []
     stats = []

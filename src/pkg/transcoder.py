@@ -90,7 +90,7 @@ def process_video(video):
         move_temp(tempfile ,video.targetFile, olddate)
         return True
     else:
-        logger.warning("Failed to encode video: {} - {} ret: {}".format(videofile, codec, str(ret)))
+        logger.warning("Failed to encode video: {} - {} ret: {}".format(video.origFile, video.codec.name, str(ret)))
         return False
     
 def get_temp_file(template):
