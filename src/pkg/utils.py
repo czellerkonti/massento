@@ -1,4 +1,4 @@
-import os,datetime,subprocess,sys,platform,json,config
+import os,datetime,subprocess,sys,platform,json,config,shutil
 from os import system
 Config = config.Configuration
 
@@ -29,7 +29,6 @@ def move_temp( tempfile, target, date ):
     targetdir = os.path.dirname(target)
     if not os.path.exists(targetdir):
         os.makedirs(targetdir)
-    logger.warning("Moving")
     shutil.move(tempfile,target)
     os.utime(target, (date, date))
     return

@@ -29,10 +29,3 @@ def has_been_encoded(video, identifiers):
     if(  any(identifier in video_details for identifier in identifiers) ):
         return True
     return False
-
-
-
-def generate_copy_outputpath(videofile, src_root, dst_root):
-    if dst_root:
-        targetdir = videofile.replace(src_root, dst_root)
-    return targetdir

@@ -4,7 +4,7 @@ from classes import CodecTemplate
 class Configuration:
     
     # logs the process here
-    ffmpeg="d:\\Tools\\ffmpeg-3.2.4-win64-shared\\bin\\ffmpeg.exe"
+    ffmpeg="ffmpeg.exe"
     ffprobe="d:\\Tools\\ffmpeg-3.2.4-win64-shared\\bin\\ffprobe.exe"
     ffprobe_opts = "-v error -select_streams v:0 -show_format -show_streams  -of default=noprint_wrappers=1"
     #ffmpeg="ffmpeg"
@@ -41,7 +41,7 @@ class Configuration:
     dst_root = ""
     src_root = ""
     analyze = False
-    
+    logger = False
     copy_only = False
     
     

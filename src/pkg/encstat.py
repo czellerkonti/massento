@@ -30,19 +30,19 @@ class Statistics:
         self.stat_file.close()    
     
     def generate_csv_row(self,video):
-        ratio = os.path.getsize(video.targetPath) / os.path.getsize(video.sourcePath) * 100
+        ratio = os.path.getsize(video.targetFile) / os.path.getsize(video.origFile) * 100
         ratio = "{0:.2f}".format(ratio)
         ratio = ratio.replace('.',',')
-        row = (video.sourcePath + ";" +
-                video.codec+";" +
+        row = (video.origFile + ";" +
+                video.codec.name+";" +
                 str(video.execCode) + ";" + 
-                video.getStartTime().strftime(config.LOG_DATE_FORMAT) + ";" + 
-                video.getStopTime().strftime(config.LOG_DATE_FORMAT) + ";" + 
+                video.getStartTime().strftime(config.log_date_format) + ";" + 
+                video.getStopTime().strftime(config.log_date_format) + ";" + 
                 str(video.getStopTime() - video.getStartTime()) + ";" + 
-                str(os.path.getsize(video.sourcePath)) + ";" + 
-                str(os.path.getsize(video.targetPath))+";" + 
-                utils.GetHumanReadableSize(os.path.getsize(video.sourcePath)) + ";" + 
-                utils.GetHumanReadableSize(os.path.getsize(video.targetPath)) + ";" + 
+                str(os.path.getsize(video.origFile)) + ";" + 
+                str(os.path.getsize(video.targetFile))+";" + 
+                utils.GetHumanReadableSize(os.path.getsize(video.origFile)) + ";" + 
+                utils.GetHumanReadableSize(os.path.getsize(video.targetFile)) + ";" + 
                 str(ratio) + "\n")
         return row
     
