@@ -60,7 +60,7 @@ class Configuration:
         else:
             codec_names_argumentlist = args.templates.split(",")
             for codec_name in codec_names_argumentlist:
-                if codec_name not in [codec.name for codec in self.codecs]:
+                if codec_name not in [codec.name for key,codec in self.codecs.items()]:
                     print("Unknown codec: " + str(codec_name))
                 else:
                     self.selected_codecs[codec_name] = self.codecs[codec_name]

@@ -42,7 +42,7 @@ def copy_file(source, target):
     shutil.copy(source, target)
     return
 
-def print_list(lst, title):
+def print_list(lst, title, logger):
 
     if len(lst) > 0:
         max = 0

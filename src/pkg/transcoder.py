@@ -9,29 +9,34 @@ import sys,os,logging,shutil,argparse,datetime,utils,config
 from config import Configuration
 from utils import my_input
 from encstat import Statistics
-from classes import ConfigLogger
+from trans_logger import MyLogger
 
 py_version = sys.version_info[0]
-l = ConfigLogger('C:\\tmp\\logfile.txt',Configuration.log_date_format)
+l = MyLogger('C:\\tmp\\logfile.txt',Configuration.log_date_format)
 logger = l.getLogger()
 
 def encode_test( codec, inputvideo, outputvideo ):
     return
 
 def collect_videos(dir, extensions, posts, encode_identifiers, analyze):
-    files = []
+    res = []
+    
     for root, dirs, files in os.walk(dir):
         for file in files:
+            
             if str(file).lower().endswith(extensions):
+               
                 full_file = os.path.join(root,file)
+                
                 if any(ext in file for ext in posts):
                     logger.error("Skipping - encoded file: "+full_file)
                     continue
                 if analyze and has_been_encoded(full_file, encode_identifiers):
                     logger.error("Skipping - analyzed as encoded file: " + full_file)
                 else:
-                    files.append(full_file)
-    return files
+                    res.append(full_file)
+    
+    return res
 
 def get_tasklist(files, codecs, force):
     lst = []
@@ -144,12 +149,16 @@ def main():
     
     inputParam = args.input
     print('Input: ' + inputParam)
-
     
-    Config.logger = config_logger(Config.LOGFILE)
-    logger = Config.logger
-    print("Selected codecs: ", Config.SELECTED_CODECS)
-    stats = Statistics(Config.TEMPPATH + os.path.sep + "stats_" + datetime.datetime.now().strftime(Config.STATFILE_NAME_DATE) + ".csv")
+    
+    l = MyLogger(config.logfile,config.log_date_format)
+    config.logger = l.getLogger()
+    logger = config.logger
+    print("Selected codecs: ", config.selected_codecs.keys())
+    stats = Statistics(config.temppath + os.path.sep + "stats_" + datetime.datetime.now().strftime(config.statfile_name_date) + ".csv")
+    
+    posts = [ "_"+name for name in config.selected_codecs.keys()]
+    posts.append("_enc")
     
     if not os.path.exists(inputParam):
         print(inputParam + ' does not exist...exiting')
@@ -163,11 +172,11 @@ def main():
     if os.path.isdir(inputParam):
         inputParam = ((args.input + os.path.sep).replace(os.path.sep*2, os.path.sep))
         SRC_ROOT = inputParam
-        logger.error("Folder processing: "+inputParam)
-        collect_videos(inputParam)
-        print_list(Config.FILES,"Video List")
+        #logger.error("Folder processing: "+inputParam)
+        unprocessed_files = collect_videos(inputParam, config.extensions, posts, config.encode_identifiers, config.analyze)
+        utils.print_list(unprocessed_files,"Video List", logger)
         my_input("Press a key to continue...")
-        print_list(get_tasklist(),"Task List")
+        utils.print_list(get_tasklist(unprocessed_files,config.selected_codecs,config.force_encode),"Task List", logger)
         my_input("Press a key to continue...")
         process_folder(inputParam)
         print_list(FAILED_VIDEOS,'Failed Videos')
