@@ -1,17 +1,6 @@
-import logging,sys
+import logging,sys,os
 
-class Video:
-
-    def __init__(self, origpath, targetpath, codec):
-        if not os.path.exists(origpath):
-            self.existing = False
-        else:
-            self.sourcePath = origpath
-            self.targetPath = targetpath
-            self.codec = codec
-        self.execCode = -99
-        self.startDateTime = 0;
-        self.stopDateTime = 0;
+class Videoo:
 
     def setStartTime(self):
         self.startDateTime = datetime.datetime.now()
@@ -31,6 +20,27 @@ class Video:
         if self.stopDateTime == 0:
             return datetime.datetime.now()
         return self.stopDateTime
+    
+    def generate_output_path(videofile, src_root, dst_root,codec):
+        fname = os.path.splitext(os.path.basename(videofile))[0]+codec.post + "." + codec.container
+        targetdir=os.path.dirname(videofile)+os.path.sep
+        if not dst_root:
+            targetdir = targetdir + codec
+        if dst_root:
+            targetdir = targetdir.replace(src_root, dst_root)
+        ret = os.path.join(targetdir,fname)
+        return ret
+    
+    def __init__(self, file, src_root, dst_root, codec):
+        if not os.path.exists(file):
+            self.existing = False
+        else:
+            self.origFile = file
+            self.targetFile = generate_output_path(file, src_root, dst_root, codec)
+            self.codec = codec
+        self.execCode = -99
+        self.startDateTime = 0;
+        self.stopDateTime = 0;
 
 class Encoder:
 
@@ -57,3 +67,4 @@ class CodecTemplate:
         self.name = name
         self.options = options
         self.container = container
+        self.post = "_"+name

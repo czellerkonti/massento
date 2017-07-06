@@ -10,6 +10,7 @@ from config import Configuration
 from utils import my_input
 from encstat import Statistics
 from trans_logger import MyLogger
+from classes import Videoo
 
 py_version = sys.version_info[0]
 l = MyLogger('C:\\tmp\\logfile.txt',Configuration.log_date_format)
@@ -38,16 +39,16 @@ def collect_videos(dir, extensions, posts, encode_identifiers, analyze):
     
     return res
 
-def get_tasklist(files, codecs, force):
+def get_tasklist(files, src_root, dst_root, codecs, force):
     lst = []
     for file in files:
-        for c in codecs:
-            targetfile = generate_output_path(file, c)
+        for codec in codecs:
+            targetfile = generate_output_path(file, codec, src_root, dst_root)
             if force and os.path.isfile(targetfile):
-                lst.append(file + " - " + c + " (forced)")
+                lst.append(file + " - " + codec.name + " (forced)")
                 continue
             if not os.path.isfile(targetfile):
-                lst.append(file + " - " + c)
+                lst.append(file + " - " + codec.name)
     return lst
 
 # prepare the output filenames and start the encoding
@@ -105,17 +106,7 @@ def process_video(codec, videofile):
 def get_temp_file(template):
     ret = TEMPPATH + os.path.sep + TEMPFILE +'.' + CONTAINERS[template]
     print("TEMPFILE: " + ret)
-    return ret
-
-def generate_output_path(videofile, codec, src_root, dst_root):
-    fname = os.path.splitext(os.path.basename(videofile))[0]+"_" + codec + "." + Config.CONTAINERS[codec]
-    targetdir=os.path.dirname(videofile)+os.path.sep
-    if not dst_root:
-        targetdir = targetdir + codec
-    if dst_root:
-        targetdir = targetdir.replace(src_root, dst_root)
-    ret = os.path.join(targetdir,fname)
-    return ret
+    return
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Transcodes videos in a folder")
@@ -139,6 +130,14 @@ def parse_arguments():
     
     
     return args
+
+def get_video_objs(files, src_root, dst_root, codecs):
+    res = []
+    for file in files:
+        for codec in codecs:
+            video = Videoo(file, src_root, dst_root, codecs)
+            res.append(video)
+    return res
 
 def main():
     global logger
@@ -166,17 +165,23 @@ def main():
 
     if os.path.isfile(inputParam):
         logger.error("File processing: \""+inputParam+"\"")
-        for c in Config.SELECTED_CODECS:
+        for c in config.selected_codecs:
             process_video(c, inputParam)
 
     if os.path.isdir(inputParam):
         inputParam = ((args.input + os.path.sep).replace(os.path.sep*2, os.path.sep))
-        SRC_ROOT = inputParam
+        config.src_root = inputParam
         #logger.error("Folder processing: "+inputParam)
         unprocessed_files = collect_videos(inputParam, config.extensions, posts, config.encode_identifiers, config.analyze)
         utils.print_list(unprocessed_files,"Video List", logger)
         my_input("Press a key to continue...")
-        utils.print_list(get_tasklist(unprocessed_files,config.selected_codecs,config.force_encode),"Task List", logger)
+        videos = get_video_objs(unprocessed_files, config.src_root, config.dst_root, config.selected_codecs)
+        utils.print_list(get_tasklist(unprocessed_files,
+                                      config.selected_codecs, 
+                                      config.src_root, 
+                                      config.dst_root, 
+                                      config.force_encode),
+                         "Task List", logger)
         my_input("Press a key to continue...")
         process_folder(inputParam)
         print_list(FAILED_VIDEOS,'Failed Videos')
