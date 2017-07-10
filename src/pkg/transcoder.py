@@ -144,9 +144,7 @@ def main():
     print('Input: ' + inputParam)
     
     
-    l = MyLogger(config.logfile,config.log_date_format)
-    config.logger = l.getLogger()
-    Configuration.logger = l.getLogger()
+    Configuration.logger = logger
     logger = config.logger
     print("Selected codecs: ", config.selected_codecs.keys())
     stats = Statistics(config.temppath + os.path.sep + "stats_" + datetime.datetime.now().strftime(config.statfile_name_date) + ".csv")
