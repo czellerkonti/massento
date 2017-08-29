@@ -1,4 +1,4 @@
-import os,datetime,subprocess,sys,platform,json,config,shutil
+import os,datetime,subprocess,sys,platform,json,config,shutil,locale
 from os import system
 Config = config.Configuration
 
@@ -53,5 +53,6 @@ def print_list(lst, title, logger):
         half = int((max - len(title)) / 2)
         logger.warning("-"*half + " "+title+" "+ "-"*half)
         for video in sorted(lst):
+            #video = video
             logger.warning('| ' + video + ' '*(max-len(video)-2) + '|')
         logger.warning('-'*int(max+1))

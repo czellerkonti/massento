@@ -15,6 +15,7 @@ from classes import Videoo, Encoder
 
 py_version = sys.version_info[0]
 l = MyLogger('C:\\tmp\\logfile.txt',Configuration.log_date_format)
+
 logger = l.getLogger()
 
 def collect_videos(dir, extensions, posts, encode_identifiers, analyze):

@@ -8,7 +8,8 @@ class MyLogger:
   
         rootLogger = logging.getLogger()
     
-        fileHandler = logging.FileHandler(self.logfile)
+        fileHandler = logging.FileHandler(self.logfile,
+                                  encoding = "UTF-8")
         fileHandler.setFormatter(self.logFormatter)
         fileHandler.setLevel(logging.INFO)
         rootLogger.addHandler(fileHandler)
