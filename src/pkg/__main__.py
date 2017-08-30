@@ -41,7 +41,6 @@ def collect_videos(dir, extensions, posts, encode_identifiers, analyze):
 def get_tasklist_report(videos):
     lst = []
     for video in videos:
-
         if video.existing:
             lst.append(video.origFile + " - " + video.codec.name + " (forced)")
             continue
@@ -56,7 +55,7 @@ def process_videos( videos, copy_only, stat ):
     x = 0
     for video in videos:
         x = x + 1
-        set_window_title(str(x)  + "/" + str(len(videos)) + " - " + video.origFile)
+        set_window_title(str(x)  + "/" + str(len(videos)) + " - " + video.origFile + "(" + video.codec.name + ")")
         if copy_only:
             utils.copy_file(video.origFile,video.targetFile)
         else:
@@ -126,12 +125,11 @@ def get_video_objs(files, src_root, dst_root, codecs, force):
     res = []
     for file in files:
         for codec in codecs:
-            video = Videoo(file, src_root, dst_root, codecs[codec])
-            if(force):
-                video.force = True
+            video = Videoo(file, src_root, dst_root, codecs[codec], force)
+            if(force or (not video.existing)):
+                res.append(video)
             else:
-                video.force = False
-            res.append(video)
+                print("Skipping: "+video.origFile)
     return res
 
 def main():
@@ -170,6 +168,7 @@ def main():
         unprocessed_files = collect_videos(inputParam, config.extensions, posts, config.encode_identifiers, config.analyze)
         utils.print_list(unprocessed_files,"Video List", logger)
         my_input("Press a key to continue...")
+        print(" - DEBUG - force: " + str(config.force_encode))
         videos = get_video_objs(unprocessed_files, config.src_root, config.dst_root, config.selected_codecs, config.force_encode)
         utils.print_list(get_tasklist_report(videos),"Task List", logger)
         my_input("Press a key to continue...")

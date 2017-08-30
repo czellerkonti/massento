@@ -25,23 +25,25 @@ class Videoo:
         fname = os.path.splitext(os.path.basename(videofile))[0]+codec.post + "." + codec.container
         targetdir = os.path.dirname(videofile)+os.path.sep
         if not dst_root:
-            targetdir = targetdir + codec
+            targetdir = targetdir + codec.name
         if dst_root:
             targetdir = targetdir.replace(src_root, dst_root)
         ret = os.path.join(targetdir,fname)
         return ret
     
-    def __init__(self, file, src_root, dst_root, codec):
+    def __init__(self, file, src_root, dst_root, codec, forced):
         self.origFile = file
         self.targetFile = self.generate_output_path(file, src_root, dst_root, codec)
         self.codec = codec
         self.execCode = -99
         self.startDateTime = 0;
+        self.forced = forced;
         self.stopDateTime = 0;
         if os.path.exists(self.targetFile):
             self.existing = True
         else:
             self.existing = False
+        
         
     
 class Encoder:

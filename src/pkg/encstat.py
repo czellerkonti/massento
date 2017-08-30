@@ -1,4 +1,4 @@
-import os,utils,config
+import os,utils,config,codecs
 config = config.Configuration
 
 class Statistics:
@@ -10,7 +10,7 @@ class Statistics:
             os.remove(self.statfilepath)
         except (OSError) as e:
             pass
-        self.stat_file = open(self.statfilepath, "w")
+        self.stat_file = codecs.open(self.statfilepath, "w", "utf-8")
         self.stat_file.write("Video file;" +
                         "Codec;" +
                         "Exec code;" +
@@ -25,7 +25,7 @@ class Statistics:
         self.stat_file.close()
         
     def write_row(self,row):
-        self.stat_file = open(self.statfilepath, "a")
+        self.stat_file = codecs.open(self.statfilepath, "a", "utf-8")
         self.stat_file.write(row)
         self.stat_file.close()    
     
