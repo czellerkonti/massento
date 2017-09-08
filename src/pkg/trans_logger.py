@@ -20,6 +20,10 @@ class MyLogger:
         rootLogger.addHandler(consoleHandler)
         rootLogger.setLevel(logging.INFO)
         self.rootLogger = rootLogger
+        self.rootLogger.warning("")
+        self.rootLogger.warning("")
+        self.rootLogger.warning("")
+        self.rootLogger.warning("========================================================================================================================================================================================================================")
 
     def getLogger(self):
         return self.rootLogger

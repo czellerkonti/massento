@@ -116,7 +116,7 @@ class Configuration:
                 self.logfile = self.temppath + os.path.sep + "actual.txt"
                 self.task_list = self.temppath + os.path.sep + "list.txt"
             if 'extensions_filter' in d:
-                self.exensions = tuple(d["extensions_filter"])
+                self.extensions = tuple(d["extensions_filter"])
             if 'encode_identifiers' in d:
                 self.encode_identifiers = tuple(d["encode_identifiers"])
             if 'ffprobe' in d:

@@ -20,7 +20,6 @@ logger = l.getLogger()
 
 def collect_videos(dir, extensions, posts, encode_identifiers, analyze):
     res = []
-
     for root, dirs, files in os.walk(dir):
         for file in files:
 
@@ -76,7 +75,7 @@ def process_video(video):
     #        logger.error(videofile + " has been already transcoded with an other template!")
      #       return -2
 
-    if video.force: logger.warning("Forcing re-encode: " + video.origFile)
+    if video.forced: logger.warning("Forcing re-encode: " + video.origFile)
 
     video.setStartTime()
     ret = encoder.encode(video)
