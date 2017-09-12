@@ -120,7 +120,7 @@ def parse_arguments():
 
     return args
 
-def get_video_objs(files, src_root, dst_root, codecs, force):
+def get_video_objs(files, src_root, dst_root, codecs, force, stat):
     res = []
     for file in files:
         for codec in codecs:
@@ -128,7 +128,9 @@ def get_video_objs(files, src_root, dst_root, codecs, force):
             if(force or (not video.existing)):
                 res.append(video)
             else:
+                stat.write_row(stat.generate_csv_row(video))
                 print("Skipping: "+video.origFile)
+                
     return res
 
 def main():
@@ -164,16 +166,17 @@ def main():
         inputParam = ((args.input + os.path.sep).replace(os.path.sep*2, os.path.sep))
         config.src_root = inputParam
         #logger.error("Folder processing: "+inputParam)
-        unprocessed_files = collect_videos(inputParam, config.extensions, posts, config.encode_identifiers, config.analyze)
-        utils.print_list(unprocessed_files,"Video List", logger)
+
+        # collect_videos_new(src_root, dst_root, selected_codecs, forced):        
+        original_files = collect_videos(inputParam, config.extensions, posts, config.encode_identifiers, config.analyze)
+        utils.print_list(original_files,"Video List", logger)
         my_input("Press a key to continue...")
         print(" - DEBUG - force: " + str(config.force_encode))
-        videos = get_video_objs(unprocessed_files, config.src_root, config.dst_root, config.selected_codecs, config.force_encode)
+        videos = get_video_objs(original_files, config.src_root, config.dst_root, config.selected_codecs, config.force_encode, stat)
         utils.print_list(get_tasklist_report(videos),"Task List", logger)
         my_input("Press a key to continue...")
         failed_videos = process_videos(videos, config.copy_only, stat)
         utils.print_list(failed_videos,'Failed Videos', logger)
-        #write_stats(stats)
         logger.error("Exit.")
 
 if __name__ == '__main__':
