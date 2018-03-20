@@ -109,6 +109,7 @@ def parse_arguments():
     parser.add_argument("-r","--root", help="Copies the encoded file into an other root folder")
     parser.add_argument("-a","--analyze", help="Analyze video formats", action="count")
     parser.add_argument("-c","--copy", help="copy files only, use it only with -r", action="count")
+    parser.add_argument("-w","--forcewidth", help="forces the max width scaling to upscale low res videos", action="count")
     args = parser.parse_args()
 
 
@@ -116,8 +117,6 @@ def parse_arguments():
         print("Input not found.")
         parser.print_help()
         sys.exit(2)
-
-
     return args
 
 def get_video_objs(files, src_root, dst_root, codecs, force, stat):

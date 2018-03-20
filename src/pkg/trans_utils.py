@@ -1,5 +1,5 @@
 def get_video_details(file):
-    command = str(Config.FFPROBE) + " " + str(Config.FFPROBE_OPTS) + " \"" + file + "\""
+    command = str(Config.ffprobe) + " " + str(Config.ffprobe_opts) + " \"" + file + "\""
     ret = subprocess.check_output(command, shell=True)
     ret = str(ret)
     ret = ret.replace('\n', '').replace('\r', '')
@@ -7,7 +7,7 @@ def get_video_details(file):
     return ret
 
 def get_codec_tag(file):
-    command = Config.FFPROBE + " -v error -select_streams v:0  -show_format -show_entries format=codec_tag_string -of default=noprint_wrappers=1 \"" + file + "\""
+    command = Config.ffprobe + " -v error -select_streams v:0  -show_format -show_entries format=codec_tag_string -of default=noprint_wrappers=1 \"" + file + "\""
     ret = subprocess.check_output(command, shell=True)
     ret = str(ret)
     ret = ret.replace('\n', '').replace('\r', '')
@@ -15,7 +15,7 @@ def get_codec_tag(file):
     return ret
 
 def get_encoder(file):
-    command = Config.FFPROBE + " -v error -select_streams v:0 -show_entries stream=codec_tag_string -of default=noprint_wrappers=1 \"" + file + "\""
+    command = Config.ffprobe + " -v error -select_streams v:0 -show_entries stream=codec_tag_string -of default=noprint_wrappers=1 \"" + file + "\""
     ret = subprocess.check_output(command, shell=True)
     ret = str(ret)
     ret = ret.replace('\n', '').replace('\r', '')
@@ -29,3 +29,9 @@ def has_been_encoded(video, identifiers):
     if(  any(identifier in video_details for identifier in identifiers) ):
         return True
     return False
+
+def get_video_width(file):
+    command = str(Config.ffprobe) + " " + str(Config.ffprobe_width) + " " + "\"" + file + "\""
+    ret = subprocess.check_output(command, shell=True)
+    ret = str(ret)
+    return ret.split("=")[-1]

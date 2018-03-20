@@ -1,4 +1,5 @@
 import logging,sys,os,datetime
+from trans_utils import get_video_width
 
 class Videoo:
 
@@ -56,16 +57,18 @@ class Encoder:
 
     def encode(self, video):
         self.logger.warning("Transcoding "+video.origFile+" - "+video.codec.name)
+        self.logger.warning("Width: " + get_video_width(video.origFile))
         command = self.ffmpeg + " " + self.extraopts + " \"" + video.origFile + "\" " + video.codec.options + " \"" + self.tempfile +"\""
         self.logger.error(command)
-        ret = os.system(command)
+        #ret = os.system(command)
         self.logger.warning("ret: "+str(ret))
         return ret
 
 class CodecTemplate:
     
-    def __init__(self, name, options, container):
+    def __init__(self, name, options, container, maxscale=4096):
         self.name = name
         self.options = options
         self.container = container
         self.post = "_"+name
+        self.maxscale  = maxscale
