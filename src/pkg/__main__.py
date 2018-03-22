@@ -5,16 +5,18 @@ Created on 10.04.2017
 @author: Konstantin Czeller
 '''
 
-import sys,os,logging,shutil,argparse,datetime,utils,config
+import sys,os,logging,shutil,argparse,datetime
 from os import system
-from config import Configuration
-from utils import my_input, set_window_title, move_temp
-from encstat import Statistics
-from trans_logger import MyLogger
-from classes import Videoo, Encoder
+from helpers.utils import *
+from helpers.stats import *
+from helpers.classes import *
+from helpers.config import *
+from helpers.logger import Logger
+
+
 
 py_version = sys.version_info[0]
-l = MyLogger('C:\\tmp\\logfile.txt',Configuration.log_date_format)
+l = Logger('C:\\tmp\\logfile.txt', Configuration.log_date_format)
 
 logger = l.getLogger()
 
@@ -56,7 +58,7 @@ def process_videos( videos, copy_only, stat ):
         x = x + 1
         set_window_title(str(x)  + "/" + str(len(videos)) + " - " + video.origFile + "(" + video.codec.name + ")")
         if copy_only:
-            utils.copy_file(video.origFile,video.targetFile)
+            copy_file(video.origFile,video.targetFile)
         else:
             if( not process_video(video)):
                 failed_videos.append(video.targetFile)
@@ -67,8 +69,8 @@ def process_videos( videos, copy_only, stat ):
 def process_video(video):
     tempfile = Configuration.temppath + os.path.sep + Configuration.tempfile + "." + video.codec.container
     encoder = Encoder(Configuration.logger, Configuration.ffmpeg, Configuration.extraopts, tempfile)
-    if Configuration.paranoid and any(os.path.isfile(generate_output_path(videofile,x)) for x in CODECS.keys()):
-        logger.error(videofile + ' has been already transcoded with an other template, PARANOID mode is on')
+    if Configuration.paranoid and any(os.path.isfile(generate_output_path(video.origFile,x)) for x in CODECS.keys()):
+        logger.error(video.origFile + ' has been already transcoded with an other template, PARANOID mode is on')
         video.setExecCode(0)
         return
 
@@ -109,6 +111,7 @@ def parse_arguments():
     parser.add_argument("-r","--root", help="Copies the encoded file into an other root folder")
     parser.add_argument("-a","--analyze", help="Analyze video formats", action="count")
     parser.add_argument("-c","--copy", help="copy files only, use it only with -r", action="count")
+    parser.add_argument("-w","--forcewidth", help="forces the max width scaling to upscale low res videos NOT IMPLEMEMNTED", action="count")
     args = parser.parse_args()
 
 
@@ -116,15 +119,13 @@ def parse_arguments():
         print("Input not found.")
         parser.print_help()
         sys.exit(2)
-
-
     return args
 
 def get_video_objs(files, src_root, dst_root, codecs, force, stat):
     res = []
     for file in files:
         for codec in codecs:
-            video = Videoo(file, src_root, dst_root, codecs[codec], force)
+            video = Video(file, src_root, dst_root, codecs[codec], force)
             if(force or (not video.existing)):
                 res.append(video)
             else:
@@ -169,14 +170,14 @@ def main():
 
         # collect_videos_new(src_root, dst_root, selected_codecs, forced):        
         original_files = collect_videos(inputParam, config.extensions, posts, config.encode_identifiers, config.analyze)
-        utils.print_list(original_files,"Video List", logger)
+        print_list(original_files,"Video List", logger)
         my_input("Press a key to continue...")
         print(" - DEBUG - force: " + str(config.force_encode))
         videos = get_video_objs(original_files, config.src_root, config.dst_root, config.selected_codecs, config.force_encode, stat)
-        utils.print_list(get_tasklist_report(videos),"Task List", logger)
+        print_list(get_tasklist_report(videos),"Task List", logger)
         my_input("Press a key to continue...")
         failed_videos = process_videos(videos, config.copy_only, stat)
-        utils.print_list(failed_videos,'Failed Videos', logger)
+        print_list(failed_videos,'Failed Videos', logger)
         logger.error("Exit.")
 
 if __name__ == '__main__':

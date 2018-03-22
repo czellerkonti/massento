@@ -41,22 +41,35 @@
 			"container": "mp4"
 		},
 		"phone_x264": {
-			"opts": "-vf scale=720:-2,format=yuv420p -c:v libx264 -tune stillimage,fastdecode -preset slow -crf 23 -c:a aac -ab 160k ",
+			"opts": "-vf scale=720:-2,format=yuv420p -c:v libx264 -profile:v main -level 4.0 -preset slow -crf 23 -c:a aac -ab 160k ",
 			"container": "mp4"
 		},
 		"phone_x265": {
 			"opts":	"-vf scale=720:-2,format=yuv420p -c:v libx265 -tune fastdecode -preset fast -crf 25  -c:a aac -ab 160k  ",
 			"container": "mp4"
 		},
+		"phone_x265_norm": {
+			"maxscale": "720",
+			"opts":	"-vf scale=720:-2,format=yuv420p -c:v libx265 -tune fastdecode -preset fast -crf 25  -c:a aac -ab 160k -filter:a loudnorm ",
+			"container": "mp4"
+		},
 		"phone_xvid": {
-			"opts": "-vf scale=720:-2,format=yuv420p -c:v libxvid -qscale:v 2 -vtag xvid -c:a libmp3lame -qscale:a 4  ",
+			"opts": "-vf scale=640:-2,format=yuv420p -c:v libxvid -qscale:v 2 -vtag xvid -c:a libmp3lame -qscale:a 4  ",
 			"container": "avi"
+		},
+		"dash": {
+			"opts": "-vf format=yuv420p -c:v libx264 -profile:v main -level 4.0 -preset slow -crf 23 -c:a aac -ab 160k ",
+			"container": "mp4"
+		},
+		"norm": {
+			"opts": "-c:v copy  -c:a aac -ab 160k -filter:a loudnorm ",
+			"container": "mp4"
 		}
 	},
 	"ffmpeg":		"ffmpeg",
 	"ffprobe":		"ffprobe",
 	"ffprobe_opts":	"-v error -select_streams v:0 -show_format -show_streams  -of default=noprint_wrappers=1",
-	"temppath":		"C:\\tmp\\",
+	"ffprobe_width": "-v error -of flat=s=_ -select_streams v:0 -show_entries stream=width"
 	"extensions_filter": ["avi","mpg","mpeg","mpv","mp4","mkv","mov","webm"],
 	"encode_identifiers": ["xvid","mplayer"]
 }
