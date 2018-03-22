@@ -111,7 +111,7 @@ def parse_arguments():
     parser.add_argument("-r","--root", help="Copies the encoded file into an other root folder")
     parser.add_argument("-a","--analyze", help="Analyze video formats", action="count")
     parser.add_argument("-c","--copy", help="copy files only, use it only with -r", action="count")
-    parser.add_argument("-w","--forcewidth", help="forces the max width scaling to upscale low res videos", action="count")
+    parser.add_argument("-w","--forcewidth", help="forces the max width scaling to upscale low res videos NOT IMPLEMEMNTED", action="count")
     args = parser.parse_args()
 
 

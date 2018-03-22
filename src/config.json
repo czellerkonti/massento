@@ -51,8 +51,8 @@
 			"container": "mp4"
 		},
 		"phone_x265_norm": {
-			"maxscale": "240",
-			"opts":	"-c:v libx265 -tune fastdecode -preset veryfast -crf 51  -c:a aac -ab 160k -filter:a loudnorm ",
+			"maxscale": "720",
+			"opts":	"-c:v libx265 -tune fastdecode -preset veryfast -crf 25 -c:a aac -ab 160k -filter:a loudnorm ",
 			"container": "mp4"
 		},
 		"phone_xvid": {
