@@ -1,7 +1,7 @@
-import logging,sys,os,datetime
-from helpers.transutils import get_video_width
+import logging,sys,os,datetime, helpers.utils 
+from helpers.config import *
 
-class Videoo:
+class Video:
 
     def setStartTime(self):
         self.startDateTime = datetime.datetime.now()
@@ -37,15 +37,14 @@ class Videoo:
         self.targetFile = self.generate_output_path(file, src_root, dst_root, codec)
         self.codec = codec
         self.execCode = -99
+        self.width = int(helpers.utils.get_video_width(self.origFile))
         self.startDateTime = 0
         self.forced = forced
         self.stopDateTime = 0
         if os.path.exists(self.targetFile):
             self.existing = True
         else:
-            self.existing = False
-        
-        
+            self.existing = False  
     
 class Encoder:
 
@@ -57,7 +56,13 @@ class Encoder:
 
     def encode(self, video):
         self.logger.warning("Transcoding "+video.origFile+" - "+video.codec.name)
-        self.logger.warning("Width: " + get_video_width(video.origFile))
+        print(helpers.utils.get_video_width(video.origFile))
+        print(video.codec.maxscale)
+        if ( video.width > int(video.codec.maxscale) ) and not helpers.config.Configuration.forcewidth:
+            self.logger.warning("Rescaling to " + video.codec.maxscale)
+            self.extraopts = self.extraopts + " " + helpers.config.Configuration.rescale_opts.replace("[WIDTH]",video.codec.maxscale)
+        else:
+            self.logger.warning("Keeping original resolution: {}".format(video.width))
         command = self.ffmpeg + " " + self.extraopts + " \"" + video.origFile + "\" " + video.codec.options + " \"" + self.tempfile +"\""
         self.logger.error(command)
         ret = os.system(command)

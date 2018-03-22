@@ -1,6 +1,6 @@
 import logging,sys
 
-class MyLogger:
+class Logger:
     
     def __init__(self, logfile, log_date_format):
         self.logfile = logfile

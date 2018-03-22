@@ -8,7 +8,7 @@ class Configuration:
     
     # logs the process here
     ffmpeg="ffmpeg.exe"
-    ffprobe="d:\\Tools\\ffmpeg-3.2.4-win64-shared\\bin\\ffprobe.exe"
+    ffprobe="d:\\Tools\\ffmpeg\\bin\\ffprobe.exe"
     ffprobe_opts = "-v error -select_streams v:0 -show_format -show_streams  -of default=noprint_wrappers=1"
     ffprobe_width = "-v error -of flat=s=_ -select_streams v:0 -show_entries stream=width"
     
@@ -22,6 +22,7 @@ class Configuration:
     
     extensions=('avi','mpg','mpeg','mpv','mp4','mkv','mov')
     extraopts="-v info -y -i"
+    rescale_opts="-vf scale=[WIDTH]:-2,format=yuv420p"
     
     log_date_format="%Y-%m-%d %H:%M:%S"
     statfile_name_date="%Y%m%d-%H-%M-%S"
