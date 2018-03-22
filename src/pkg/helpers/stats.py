@@ -1,5 +1,6 @@
-import os,utils,config,codecs
-config = config.Configuration
+import os,codecs
+from helpers.config import Configuration
+from helpers.utils import *
 
 class Statistics:
          
@@ -42,16 +43,16 @@ class Statistics:
         row = (video.origFile + ";" +
                 video.codec.name+";" +
                 str(video.execCode) + ";" + 
-                video.getStartTime().strftime(config.log_date_format) + ";" + 
-                video.getStopTime().strftime(config.log_date_format) + ";" + 
+                video.getStartTime().strftime(Configuration.log_date_format) + ";" + 
+                video.getStopTime().strftime(Configuration.log_date_format) + ";" + 
                 str(video.getStopTime() - video.getStartTime()) + ";" + 
                 str(origSize) + ";" + 
                 str(targetSize)+";" + 
-                utils.GetHumanReadableSize(origSize) + ";" + 
-                utils.GetHumanReadableSize(targetSize) + ";" + 
+                GetHumanReadableSize(origSize) + ";" + 
+                GetHumanReadableSize(targetSize) + ";" + 
                 str(ratio) + "%\n")
         return row
     
-        def write_stats(self,stats):
-            for video in stats:
-                write_row(generate_csv_row(video))
+    def write_stats(self,stats):
+        for video in stats:
+            write_row(generate_csv_row(video))

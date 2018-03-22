@@ -1,5 +1,5 @@
 import logging,sys,os,datetime
-from trans_utils import get_video_width
+from helpers.transutils import get_video_width
 
 class Videoo:
 
@@ -37,9 +37,9 @@ class Videoo:
         self.targetFile = self.generate_output_path(file, src_root, dst_root, codec)
         self.codec = codec
         self.execCode = -99
-        self.startDateTime = 0;
-        self.forced = forced;
-        self.stopDateTime = 0;
+        self.startDateTime = 0
+        self.forced = forced
+        self.stopDateTime = 0
         if os.path.exists(self.targetFile):
             self.existing = True
         else:
@@ -60,7 +60,7 @@ class Encoder:
         self.logger.warning("Width: " + get_video_width(video.origFile))
         command = self.ffmpeg + " " + self.extraopts + " \"" + video.origFile + "\" " + video.codec.options + " \"" + self.tempfile +"\""
         self.logger.error(command)
-        #ret = os.system(command)
+        ret = os.system(command)
         self.logger.warning("ret: "+str(ret))
         return ret
 

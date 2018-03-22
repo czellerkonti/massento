@@ -5,16 +5,19 @@ Created on 10.04.2017
 @author: Konstantin Czeller
 '''
 
-import sys,os,logging,shutil,argparse,datetime,utils,config
+import sys,os,logging,shutil,argparse,datetime
 from os import system
-from config import Configuration
-from utils import my_input, set_window_title, move_temp
-from encstat import Statistics
-from trans_logger import MyLogger
-from classes import Videoo, Encoder
+from helpers.utils import *
+from helpers.stats import *
+from helpers.transutils import *
+from helpers.classes import *
+from helpers.config import *
+from helpers.logger import MyLogger
+
+
 
 py_version = sys.version_info[0]
-l = MyLogger('C:\\tmp\\logfile.txt',Configuration.log_date_format)
+l = MyLogger('C:\\tmp\\logfile.txt', Configuration.log_date_format)
 
 logger = l.getLogger()
 
@@ -56,7 +59,7 @@ def process_videos( videos, copy_only, stat ):
         x = x + 1
         set_window_title(str(x)  + "/" + str(len(videos)) + " - " + video.origFile + "(" + video.codec.name + ")")
         if copy_only:
-            utils.copy_file(video.origFile,video.targetFile)
+            copy_file(video.origFile,video.targetFile)
         else:
             if( not process_video(video)):
                 failed_videos.append(video.targetFile)
@@ -67,8 +70,8 @@ def process_videos( videos, copy_only, stat ):
 def process_video(video):
     tempfile = Configuration.temppath + os.path.sep + Configuration.tempfile + "." + video.codec.container
     encoder = Encoder(Configuration.logger, Configuration.ffmpeg, Configuration.extraopts, tempfile)
-    if Configuration.paranoid and any(os.path.isfile(generate_output_path(videofile,x)) for x in CODECS.keys()):
-        logger.error(videofile + ' has been already transcoded with an other template, PARANOID mode is on')
+    if Configuration.paranoid and any(os.path.isfile(generate_output_path(video.origFile,x)) for x in CODECS.keys()):
+        logger.error(video.origFile + ' has been already transcoded with an other template, PARANOID mode is on')
         video.setExecCode(0)
         return
 

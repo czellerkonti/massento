@@ -1,5 +1,8 @@
 import os,datetime,sys,json
-from classes import CodecTemplate
+from helpers.classes import CodecTemplate
+
+def sthing():
+    print("smth")
 
 class Configuration:
     
