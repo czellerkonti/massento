@@ -58,12 +58,13 @@ class Encoder:
         self.logger.warning("Transcoding "+video.origFile+" - "+video.codec.name)
         print(helpers.utils.get_video_width(video.origFile))
         print(video.codec.maxscale)
+        self.rescaleopts = ""
         if ( video.width > int(video.codec.maxscale) ) and not helpers.config.Configuration.forcewidth:
             self.logger.warning("Rescaling to " + video.codec.maxscale)
-            self.extraopts = self.extraopts + " " + helpers.config.Configuration.rescale_opts.replace("[WIDTH]",video.codec.maxscale)
+            self.rescaleopts =  helpers.config.Configuration.rescale_opts.replace("[WIDTH]",video.codec.maxscale)
         else:
             self.logger.warning("Keeping original resolution: {}".format(video.width))
-        command = self.ffmpeg + " " + self.extraopts + " \"" + video.origFile + "\" " + video.codec.options + " \"" + self.tempfile +"\""
+        command = self.ffmpeg + " " + self.extraopts + " \"" + video.origFile + "\" " + video.codec.options + " " + self.rescaleopts + " " + " \""  + self.tempfile +"\""
         self.logger.error(command)
         ret = os.system(command)
         self.logger.warning("ret: "+str(ret))
