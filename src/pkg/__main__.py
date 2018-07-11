@@ -24,11 +24,10 @@ def collect_videos(dir, extensions, posts, encode_identifiers, analyze):
     res = []
     for root, dirs, files in os.walk(dir):
         for file in files:
-
+            
             if str(file).lower().endswith(extensions):
-
+                
                 full_file = os.path.join(root,file)
-
                 if any(ext in file for ext in posts):
                     logger.error("Skipping - encoded file: "+full_file)
                     continue
@@ -169,7 +168,7 @@ def main():
         #logger.error("Folder processing: "+inputParam)
 
         # collect_videos_new(src_root, dst_root, selected_codecs, forced):        
-        original_files = collect_videos(inputParam, config.extensions, posts, config.encode_identifiers, config.analyze)
+        original_files = collect_videos(inputParam, config.extensions, config.codecs, config.encode_identifiers, config.analyze)
         print_list(original_files,"Video List", logger)
         my_input("Press a key to continue...")
         print(" - DEBUG - force: " + str(config.force_encode))

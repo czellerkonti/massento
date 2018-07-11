@@ -37,13 +37,13 @@
 			"container": "mp4"
 		},
 		"boardconnect_720p": {
-			"maxscale": "720",
+			"maxscale": "1280",
 			"opts": " -profile:v main -level 4.0 -pix_fmt yuv420p -c:v libx264 -tune fastdecode -preset veryslow -crf 18 -c:a aac -ab 160k -movflags +faststart ",
 			"container": "mp4"
 		},
-		"phone_x264": {
+		"phone_x264_norm": {
 			"maxscale": "720",
-			"opts": "-c:v libx264 -profile:v main -level 4.0 -preset slow -crf 23 -c:a aac -ab 160k ",
+			"opts": "-c:v libx264 -profile:v main -level 4.0 -preset veryfast -crf 25 -c:a aac -ab 160k -filter:a loudnorm ",
 			"container": "mp4"
 		},
 		"phone_x265": {
@@ -66,6 +66,10 @@
 		},
 		"norm": {
 			"opts": "-c:v copy  -c:a aac -ab 160k -filter:a loudnorm ",
+			"container": "mp4"
+		},
+		"toTempoChange": {
+			"opts": "-c:v libx265 -x265-params \"keyint=10:min-keyint=10\" -preset ultrafast -tune fastdecode -c:a aac -ab 160k -filter:a loudnorm -movflags +faststart",
 			"container": "mp4"
 		}
 	},
