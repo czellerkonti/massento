@@ -120,13 +120,20 @@ def parse_arguments():
         sys.exit(2)
     return args
 
-def get_video_objs(files, src_root, dst_root, codecs, force, stat):
+def get_video_objs(files, config, stat):
+    src_root = config.src_root
+    dst_root = config.dst_root
+    selected_codecs = config.selected_codecs
+    force = config.force_encode
     res = []
     for file in files:
-        for codec in codecs:
-            video = Video(file, src_root, dst_root, codecs[codec], force)
+        for codec in selected_codecs:
+            video = Video(file, src_root, dst_root, selected_codecs[codec], force)
+            if config.paranoid and any(os.path.isfile(Video.generate_output_path(file, src_root, dst_root, x)) for x in config.codecs.values()):
+                logger.error(video.origFile + ' has been already transcoded with an other template, PARANOID mode is on')
+                continue
             if(force or (not video.existing)):
-                res.append(video)
+                res.append(video)            
             else:
                 stat.write_row(stat.generate_csv_row(video))
                 print("Skipping: "+video.origFile)
@@ -172,7 +179,7 @@ def main():
         print_list(original_files,"Video List", logger)
         my_input("Press a key to continue...")
         print(" - DEBUG - force: " + str(config.force_encode))
-        videos = get_video_objs(original_files, config.src_root, config.dst_root, config.selected_codecs, config.force_encode, stat)
+        videos = get_video_objs(original_files, config, stat)
         print_list(get_tasklist_report(videos),"Task List", logger)
         my_input("Press a key to continue...")
         failed_videos = process_videos(videos, config.copy_only, stat)

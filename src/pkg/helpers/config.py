@@ -92,6 +92,7 @@ class Configuration:
             self.force_encode = True
     
         if args.paranoid:
+            print("Paranoid Mode is enabled")
             self.paranoid = True
     
         if args.root:

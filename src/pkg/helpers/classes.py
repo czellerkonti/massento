@@ -22,7 +22,8 @@ class Video:
             return datetime.datetime.now()
         return self.stopDateTime
     
-    def generate_output_path(self, videofile, src_root, dst_root, codec):
+    @staticmethod
+    def generate_output_path(videofile, src_root, dst_root, codec):
         fname = os.path.splitext(os.path.basename(videofile))[0]+codec.post + "." + codec.container
         targetdir = os.path.dirname(videofile)+os.path.sep
         if not dst_root:
