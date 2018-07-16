@@ -1,6 +1,7 @@
-import logging,sys,os,datetime
+import logging,sys,os,datetime, helpers.utils 
+from helpers.config import *
 
-class Videoo:
+class Video:
 
     def setStartTime(self):
         self.startDateTime = datetime.datetime.now()
@@ -21,7 +22,8 @@ class Videoo:
             return datetime.datetime.now()
         return self.stopDateTime
     
-    def generate_output_path(self, videofile, src_root, dst_root, codec):
+    @staticmethod
+    def generate_output_path(videofile, src_root, dst_root, codec):
         fname = os.path.splitext(os.path.basename(videofile))[0]+codec.post + "." + codec.container
         targetdir = os.path.dirname(videofile)+os.path.sep
         if not dst_root:
@@ -36,15 +38,14 @@ class Videoo:
         self.targetFile = self.generate_output_path(file, src_root, dst_root, codec)
         self.codec = codec
         self.execCode = -99
-        self.startDateTime = 0;
-        self.forced = forced;
-        self.stopDateTime = 0;
+        self.width = int(helpers.utils.get_video_width(self.origFile))
+        self.startDateTime = 0
+        self.forced = forced
+        self.stopDateTime = 0
         if os.path.exists(self.targetFile):
             self.existing = True
         else:
-            self.existing = False
-        
-        
+            self.existing = False  
     
 class Encoder:
 
@@ -56,7 +57,15 @@ class Encoder:
 
     def encode(self, video):
         self.logger.warning("Transcoding "+video.origFile+" - "+video.codec.name)
-        command = self.ffmpeg + " " + self.extraopts + " \"" + video.origFile + "\" " + video.codec.options + " \"" + self.tempfile +"\""
+        print(helpers.utils.get_video_width(video.origFile))
+        print(video.codec.maxscale)
+        self.rescaleopts = ""
+        if ( video.width > int(video.codec.maxscale) ) and not helpers.config.Configuration.forcewidth:
+            self.logger.warning("Rescaling to " + video.codec.maxscale)
+            self.rescaleopts =  helpers.config.Configuration.rescale_opts.replace("[WIDTH]",video.codec.maxscale)
+        else:
+            self.logger.warning("Keeping original resolution: {}".format(video.width))
+        command = self.ffmpeg + " " + self.extraopts + " \"" + video.origFile + "\" " + video.codec.options + " " + self.rescaleopts + " " + " \""  + self.tempfile +"\""
         self.logger.error(command)
         ret = os.system(command)
         self.logger.warning("ret: "+str(ret))
@@ -64,8 +73,9 @@ class Encoder:
 
 class CodecTemplate:
     
-    def __init__(self, name, options, container):
+    def __init__(self, name, options, container, maxscale=4096):
         self.name = name
         self.options = options
         self.container = container
         self.post = "_"+name
+        self.maxscale  = maxscale

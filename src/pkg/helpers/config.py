@@ -1,12 +1,17 @@
 import os,datetime,sys,json
-from classes import CodecTemplate
+from helpers.classes import CodecTemplate
+
+def sthing():
+    print("smth")
 
 class Configuration:
     
     # logs the process here
     ffmpeg="ffmpeg.exe"
-    ffprobe="d:\\Tools\\ffmpeg-3.2.4-win64-shared\\bin\\ffprobe.exe"
+    ffprobe="d:\\Tools\\ffmpeg\\bin\\ffprobe.exe"
     ffprobe_opts = "-v error -select_streams v:0 -show_format -show_streams  -of default=noprint_wrappers=1"
+    ffprobe_width = "-v error -of flat=s=_ -select_streams v:0 -show_entries stream=width"
+    
     #ffmpeg="ffmpeg"
     #temppath="/mnt/data/tmp"
     temppath="C:\\tmp\\"
@@ -17,6 +22,7 @@ class Configuration:
     
     extensions=('avi','mpg','mpeg','mpv','mp4','mkv','mov')
     extraopts="-v info -y -i"
+    rescale_opts="-vf scale=[WIDTH]:-2,format=yuv420p"
     
     log_date_format="%Y-%m-%d %H:%M:%S"
     statfile_name_date="%Y%m%d-%H-%M-%S"
@@ -37,6 +43,7 @@ class Configuration:
     stats = []
     force_encode = False
     paranoid = False
+    forcewidth = False
     dst_root = ""
     src_root = ""
     analyze = False
@@ -85,6 +92,7 @@ class Configuration:
             self.force_encode = True
     
         if args.paranoid:
+            print("Paranoid Mode is enabled")
             self.paranoid = True
     
         if args.root:
@@ -92,6 +100,9 @@ class Configuration:
     
         if args.analyze:
             self.analyze =  True
+        
+        if args.forcewidth:
+            self.forcewidth = True
     
         if args.copy:
             if not args.root:
@@ -108,7 +119,12 @@ class Configuration:
                 if len(templates) > 0:
                     self.codecs = {}
                     for templateid in templates.keys():
-                        self.codecs[templateid] =  CodecTemplate(templateid,templates[templateid]["opts"],templates[templateid]["container"])
+                        maxscale = 4096
+                        if "maxscale" in templates[templateid]:
+                            maxscale = templates[templateid]["maxscale"]
+                            if(not maxscale.isdigit()):
+                                maxscale = 4096
+                        self.codecs[templateid] =  CodecTemplate(templateid,templates[templateid]["opts"],templates[templateid]["container"],maxscale)
             if 'ffmpeg' in d:
                 self.ffmpeg = d["ffmpeg"]
             if 'temppath' in d:
@@ -123,3 +139,7 @@ class Configuration:
                 self.ffprobe = str(d["ffprobe"])
             if 'ffprobe_opts' in d:
                 self.ffprobe_opts = str(d["ffprobe_opts"])
+            if 'ffprobe_width' in d:
+                self.ffprobe_width = str(d["ffprobe_width"])
+            if 'ffmpeg_scaleopt' in d:
+                self.ffmpeg_scaleopt = str(d["ffmpeg_scaleopt"])

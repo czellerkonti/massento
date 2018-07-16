@@ -1,0 +1,83 @@
+{
+	"templates": {
+		"mp3": {
+			"opts": "-c:v copy -c:a libmp3lame -q:a 5 -movflags +faststart",
+			"container": "mp4"
+		},
+		"x264": {
+			"opts": "-c:v libx264 -preset veryslow -crf 20 -tune film -c:a copy -movflags +faststart",
+			"container": "mp4"
+		},
+		"x264_aac_fast": {
+			"opts": "-c:v libx264 -preset fast -crf 35 -tune film -c:a aac -ab 160k  -movflags +faststart",
+			"container": "mp4"
+		},
+		"x265": {
+			"opts": "-c:v libx265 -preset slow -crf 20 -c:a copy -movflags +faststart",
+			"container": "mp4"
+		},
+		"x265_aac": {
+			"opts":	"-c:v libx265 -preset slow -crf 20 -c:a aac -ab 160k -movflags +faststart",
+			"container": "mp4"
+		},
+		"x264_aac": {
+			"opts":	"-c:v libx264 -preset veryslow -crf 20 -tune film -c:a aac -ab 160k -movflags +faststart",
+			"container": "mp4"
+		},
+		"mp3_all": {
+			"opts":	"-c:v copy -c:a libmp3lame -q:a 5 -map 0:v -map 0:a -map 0:s",
+			"container": "mkv"
+		},
+		"copy": {
+			"opts":	"-c:v copy -c:a copy",
+			"container": "mp4"
+		},
+		"boardconnect": {
+			"opts": " -profile:v main -level 4.0 -pix_fmt yuv420p -c:v libx264 -tune fastdecode -preset veryslow -crf 18 -c:a aac -ab 160k -movflags +faststart ",
+			"container": "mp4"
+		},
+		"boardconnect_720p": {
+			"maxscale": "1280",
+			"opts": " -profile:v main -level 4.0 -pix_fmt yuv420p -c:v libx264 -tune fastdecode -preset veryslow -crf 18 -c:a aac -ab 160k -movflags +faststart ",
+			"container": "mp4"
+		},
+		"phone_x264_norm": {
+			"maxscale": "720",
+			"opts": "-c:v libx264 -profile:v main -level 4.0 -preset veryfast -crf 25 -c:a aac -ab 160k -filter:a loudnorm ",
+			"container": "mp4"
+		},
+		"phone_x265": {
+			"opts":	"-vf scale=720:-2,format=yuv420p -c:v libx265 -tune fastdecode -preset ultrafast -crf 51  -c:a aac -ab 160k  ",
+			"container": "mp4"
+		},
+		"phone_x265_norm": {
+			"maxscale": "720",
+			"opts":	"-c:v libx265 -tune fastdecode -preset veryfast -crf 25 -c:a aac -ab 160k -filter:a loudnorm ",
+			"container": "mp4"
+		},
+		"phone_xvid": {
+			"maxscale": "640",
+			"opts": "-c:v libxvid -qscale:v 2 -vtag xvid -c:a libmp3lame -qscale:a 4  ",
+			"container": "avi"
+		},
+		"dash": {
+			"opts": "-vf format=yuv420p -c:v libx264 -profile:v main -level 4.0 -preset slow -crf 23 -c:a aac -ab 160k ",
+			"container": "mp4"
+		},
+		"norm": {
+			"opts": "-c:v copy  -c:a aac -ab 160k -filter:a loudnorm ",
+			"container": "mp4"
+		},
+		"toTempoChange": {
+			"opts": "-c:v libx265 -x265-params \"keyint=10:min-keyint=10\" -preset ultrafast -tune fastdecode -c:a aac -ab 160k -filter:a loudnorm -movflags +faststart",
+			"container": "mp4"
+		}
+	},
+	"ffmpeg":		"ffmpeg",
+	"ffprobe":		"ffprobe",
+	"ffprobe_opts":	"-v error -select_streams v:0 -show_format -show_streams  -of default=noprint_wrappers=1",
+	"ffprobe_width": "-v error -of flat=s=_ -select_streams v:0 -show_entries stream=width",
+	
+	"extensions_filter": ["avi","mpg","mpeg","mpv","mp4","mkv","mov","webm"],
+	"encode_identifiers": ["xvid","mplayer"]
+}

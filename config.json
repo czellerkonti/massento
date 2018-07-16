@@ -37,26 +37,47 @@
 			"container": "mp4"
 		},
 		"boardconnect_720p": {
-			"opts": " -profile:v main -level 4.0 -pix_fmt yuv420p -vf scale=-2:720  -c:v libx264 -tune fastdecode -preset veryslow -crf 18 -c:a aac -ab 160k -movflags +faststart ",
+			"maxscale": "1280",
+			"opts": " -profile:v main -level 4.0 -pix_fmt yuv420p -c:v libx264 -tune fastdecode -preset veryslow -crf 18 -c:a aac -ab 160k -movflags +faststart ",
 			"container": "mp4"
 		},
-		"phone_x264": {
-			"opts": "-vf scale=720:-2,format=yuv420p -c:v libx264 -tune stillimage,fastdecode -preset slow -crf 23 -c:a aac -ab 160k ",
+		"phone_x264_norm": {
+			"maxscale": "720",
+			"opts": "-c:v libx264 -profile:v main -level 4.0 -preset veryfast -crf 25 -c:a aac -ab 160k -filter:a loudnorm ",
 			"container": "mp4"
 		},
 		"phone_x265": {
-			"opts":	"-vf scale=720:-2,format=yuv420p -c:v libx265 -tune fastdecode -preset fast -crf 25  -c:a aac -ab 160k  ",
+			"opts":	"-vf scale=720:-2,format=yuv420p -c:v libx265 -tune fastdecode -preset ultrafast -crf 51  -c:a aac -ab 160k  ",
+			"container": "mp4"
+		},
+		"phone_x265_norm": {
+			"maxscale": "720",
+			"opts":	"-c:v libx265 -tune fastdecode -preset veryfast -crf 25 -c:a aac -ab 160k -filter:a loudnorm ",
 			"container": "mp4"
 		},
 		"phone_xvid": {
-			"opts": "-vf scale=720:-2,format=yuv420p -c:v libxvid -qscale:v 2 -vtag xvid -c:a libmp3lame -qscale:a 4  ",
+			"maxscale": "640",
+			"opts": "-c:v libxvid -qscale:v 2 -vtag xvid -c:a libmp3lame -qscale:a 4  ",
 			"container": "avi"
+		},
+		"dash": {
+			"opts": "-vf format=yuv420p -c:v libx264 -profile:v main -level 4.0 -preset slow -crf 23 -c:a aac -ab 160k ",
+			"container": "mp4"
+		},
+		"norm": {
+			"opts": "-c:v copy  -c:a aac -ab 160k -filter:a loudnorm ",
+			"container": "mp4"
+		},
+		"toTempoChange": {
+			"opts": "-c:v libx265 -x265-params \"keyint=10:min-keyint=10\" -preset ultrafast -tune fastdecode -c:a aac -ab 160k -filter:a loudnorm -movflags +faststart",
+			"container": "mp4"
 		}
 	},
 	"ffmpeg":		"ffmpeg",
 	"ffprobe":		"ffprobe",
 	"ffprobe_opts":	"-v error -select_streams v:0 -show_format -show_streams  -of default=noprint_wrappers=1",
-	"temppath":		"C:\\tmp\\",
+	"ffprobe_width": "-v error -of flat=s=_ -select_streams v:0 -show_entries stream=width",
+	
 	"extensions_filter": ["avi","mpg","mpeg","mpv","mp4","mkv","mov","webm"],
 	"encode_identifiers": ["xvid","mplayer"]
 }
