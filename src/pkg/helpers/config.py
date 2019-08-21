@@ -1,24 +1,34 @@
-import os,datetime,sys,json
+import os,datetime,sys,json,tempfile,string,random
 from helpers.classes import CodecTemplate
+from os.path import expanduser
 
 def sthing():
     print("smth")
 
 class Configuration:
-    
+    progname = "transcoder"
     # logs the process here
-    ffmpeg="ffmpeg.exe"
-    ffprobe="d:\\Tools\\ffmpeg\\bin\\ffprobe.exe"
+
     ffprobe_opts = "-v error -select_streams v:0 -show_format -show_streams  -of default=noprint_wrappers=1"
     ffprobe_width = "-v error -of flat=s=_ -select_streams v:0 -show_entries stream=width"
-    
+    logfilename = "log.txt"
+    listfilename = "list.txt"
     #ffmpeg="ffmpeg"
     #temppath="/mnt/data/tmp"
-    temppath="C:\\tmp\\"
-    logfile=temppath + os.path.sep + "actual.txt"
+    temppath=tempfile.gettempdir()
+
+    if os.name == "posix":
+        logpath=expanduser("~") + os.path.sep + progname
+        ffmpeg="ffmpeg"
+        ffprobe="ffprobe"
+    else:
+        logpath=os.getenv('LOCALAPPDATA') + os.path.sep + progname
+        ffmpeg="ffmpeg"
+        ffprobe="ffprobe"
+    logfile=logpath + os.path.sep + logfilename
     
-    tempfile="temp"
-    task_list=temppath + os.path.sep + "list.txt"
+    tempfile=''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+    task_list=logpath + os.path.sep + listfilename
     
     extensions=('avi','mpg','mpeg','mpv','mp4','mkv','mov')
     extraopts="-v info -y -i"
@@ -26,9 +36,9 @@ class Configuration:
     
     log_date_format="%Y-%m-%d %H:%M:%S"
     statfile_name_date="%Y%m%d-%H-%M-%S"
-    statfile=temppath + os.path.sep + "stats_" + datetime.datetime.now().strftime(statfile_name_date) + ".csv"
+    statfile=logpath + os.path.sep + "stats_" + datetime.datetime.now().strftime(statfile_name_date) + ".csv"
     
-    codecs = [] 
+    codecs = []
     codecs.append(CodecTemplate("mp3","-c:v copy -c:a libmp3lame -q:a 5 -movflags +faststart","mp4"))
     codecs.append(CodecTemplate("x264","-c:v libx264 -preset veryslow -crf 20 -tune film -c:a copy -movflags +faststart","mp4"))
     codecs.append(CodecTemplate("x264","-c:v libx264 -preset veryslow -crf 20 -tune film -c:a copy -movflags +faststart","mp4"))
@@ -55,8 +65,8 @@ class Configuration:
 
         if args.temppath:
             self.temppath = args.temppath
-            self.logfile = self.temppath + os.path.sep + "actual.txt"
-            self.task_list = self.temppath + os.path.sep + "list.txt"
+            #self.logfile = self.temppath + os.path.sep + "log.txt"
+            #self.task_list = self.temppath + os.path.sep + "list.txt"
     
         if args.encoder:
             self.ffmpeg = args.encoder
@@ -129,8 +139,8 @@ class Configuration:
                 self.ffmpeg = d["ffmpeg"]
             if 'temppath' in d:
                 self.temppath = d["temppath"]
-                self.logfile = self.temppath + os.path.sep + "actual.txt"
-                self.task_list = self.temppath + os.path.sep + "list.txt"
+                self.logfile = self.temppath + os.path.sep + self.logfilename
+                self.task_list = self.temppath + os.path.sep + self.listfilename
             if 'extensions_filter' in d:
                 self.extensions = tuple(d["extensions_filter"])
             if 'encode_identifiers' in d:

@@ -11,6 +11,8 @@ class Statistics:
             os.remove(self.statfilepath)
         except (OSError) as e:
             pass
+        if not os.path.exists(os.path.abspath(os.path.join(self.statfilepath, os.pardir))):
+            os.makedirs(os.path.abspath(os.path.join(self.statfilepath, os.pardir)))
         self.stat_file = codecs.open(self.statfilepath, "w", "utf-8")
         self.stat_file.write("Video file;" +
                         "Codec;" +
