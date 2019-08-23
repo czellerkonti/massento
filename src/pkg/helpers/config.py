@@ -2,21 +2,22 @@ import os,datetime,sys,json,tempfile,string,random
 from helpers.classes import CodecTemplate
 from os.path import expanduser
 
+
 def sthing():
     print("smth")
 
 class Configuration:
-    progname = "transcoder"
+    progname = "massento"
     # logs the process here
 
     ffprobe_opts = "-v error -select_streams v:0 -show_format -show_streams  -of default=noprint_wrappers=1"
     ffprobe_width = "-v error -of flat=s=_ -select_streams v:0 -show_entries stream=width"
     logfilename = "log.txt"
     listfilename = "list.txt"
-    #ffmpeg="ffmpeg"
-    #temppath="/mnt/data/tmp"
     temppath=tempfile.gettempdir()
+    loglevel = "INFO"
 
+    # finding out logfile location
     if os.name == "posix":
         logpath=expanduser("~") + os.path.sep + progname
         ffmpeg="ffmpeg"
@@ -25,6 +26,8 @@ class Configuration:
         logpath=os.getenv('LOCALAPPDATA') + os.path.sep + progname
         ffmpeg="ffmpeg"
         ffprobe="ffprobe"
+    if not os.path.exists(logpath):
+        os.mkdir(logpath)
     logfile=logpath + os.path.sep + logfilename
     
     tempfile=''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
@@ -59,7 +62,8 @@ class Configuration:
     analyze = False
     logger = False
     copy_only = False
-    
+    delete_input = False
+    service_mode = False
     
     def process_args(self,args):
 
@@ -67,7 +71,7 @@ class Configuration:
             self.temppath = args.temppath
             #self.logfile = self.temppath + os.path.sep + "log.txt"
             #self.task_list = self.temppath + os.path.sep + "list.txt"
-    
+
         if args.encoder:
             self.ffmpeg = args.encoder
     

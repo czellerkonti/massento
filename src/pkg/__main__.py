@@ -15,8 +15,9 @@ from helpers.logger import Logger
 
 
 
+
 py_version = sys.version_info[0]
-l = Logger('C:\\tmp\\logfile.txt', Configuration.log_date_format)
+l = Logger(Configuration.logfile, Configuration.log_date_format)
 
 logger = l.getLogger()
 
@@ -111,8 +112,11 @@ def parse_arguments():
     parser.add_argument("-a","--analyze", help="Analyze video formats", action="count")
     parser.add_argument("-c","--copy", help="copy files only, use it only with -r", action="count")
     parser.add_argument("-w","--forcewidth", help="forces the max width scaling to upscale low res videos NOT IMPLEMEMNTED", action="count")
+    parser.add_argument("-d","--daemon", help="run in daemon mode NOT IMPLEMENTED", action="count")
+    parser.add_argument("-v","--verbose", help="increase output verbosity", action="count")
+    parser.add_argument("-k","--config", help="config file")
+    
     args = parser.parse_args()
-
 
     if not args.input and not args.show:
         print("Input not found.")
@@ -141,12 +145,31 @@ def get_video_objs(files, config, stat):
     return res
 
 def main():
-    global logger
-    config = Configuration('config.json')
-
     args = parse_arguments()
+    homeconfigfile = expanduser("~") + os.path.sep + ".config" + os.path.sep + Configuration.progname + os.path.sep + "config.json"
+    if os.name == "posix":
+        etcconfigfile = "/etc/" + Configuration.progname + os.path.sep + "config.json"
+    else:
+        etcconfigfile = os.getenv('LOCALAPPDATA') + os.path.sep + Configuration.progname + os.path.sep + "config.json"
+    if args.config:
+        configfile = args.config
+    elif os.path.isfile(homeconfigfile):
+        configfile = homeconfigfile
+    elif os.path.isfile(etcconfigfile):
+        configfile = etcconfigfile
+    else:
+        print("Config file not found...quit")
+        sys.exit(1)
+    print("Config file: " + configfile)
+        
+    global logger
+    if args.verbose:
+        Configuration.loglevel = "DEBUG"
+    elif "MASSENTO_LOGLEVEL" in os.environ:
+        Configuration.loglevel = os.getenv("MASSENTO_LOGLEVEL")
+        
+    config = Configuration(configfile)
     config.process_args(args)
-
     inputParam = args.input
     print('Input: ' + inputParam)
 
@@ -167,7 +190,8 @@ def main():
     if os.path.isfile(inputParam):
         logger.error("File processing: \""+inputParam+"\"")
         for c in config.selected_codecs:
-            process_video(c, inputParam)
+            process_videos(c, inputParam)
+        sys.exit(0)
 
     if os.path.isdir(inputParam):
         inputParam = ((args.input + os.path.sep).replace(os.path.sep*2, os.path.sep))
