@@ -1,5 +1,6 @@
 FROM python:alpine
 
 ADD src/pkg /opt/transcoder/
-
-CMD [ "python", "/opt/transcoder" ]
+ENV MASSENTO_SCAN_DELAY=10
+ENV MASSENTO_LOGLEVEL=INFO
+CMD [ "python", "/opt/transcoder -d" ]

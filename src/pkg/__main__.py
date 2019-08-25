@@ -5,7 +5,7 @@ Created on 10.04.2017
 @author: Konstantin Czeller
 '''
 
-import sys,os,logging,shutil,argparse,datetime
+import sys,os,logging,shutil,argparse,datetime, time
 from os import system
 from helpers.utils import *
 from helpers.stats import *
@@ -139,15 +139,12 @@ def parse_arguments():
     parser.add_argument("-a","--analyze", help="Analyze video formats", action="count")
     parser.add_argument("-c","--copy", help="copy files only, use it only with -r", action="count")
     parser.add_argument("-w","--forcewidth", help="forces the max width scaling to upscale low res videos NOT IMPLEMEMNTED", action="count")
-    parser.add_argument("-d","--daemon", help="run in daemon mode NOT IMPLEMENTED", action="count")
+    parser.add_argument("-d","--daemon", help="run in daemon mode", action="count")
+    parser.add_argument("-y","--delay", help="daemon mode scan delay in seconds")
     parser.add_argument("-v","--verbose", help="increase output verbosity", action="count")
     args = parser.parse_args()
     Configuration.process_args(args)
 
-    if not args.input and not args.show:
-        print("Input not found.")
-        parser.print_help()
-        sys.exit(2)
     return args
 
 def get_video_objs(files, stat):
@@ -179,9 +176,35 @@ def main():
     elif "MASSENTO_LOGLEVEL" in os.environ:
         Configuration.loglevel = os.getenv("MASSENTO_LOGLEVEL")
     
+    if args.input:
+        pass
+    elif "MASSENTO_INPUT" in os.environ:
+        args.input = os.getenv("MASSENTO_INPUT")
+
+    if args.root:
+        pass
+    elif "MASSENTO_OUTPUT" in os.environ:
+        args.root = os.getenv("MASSENTO_OUTPUT")
+
+    if args.delay:
+        Configuration.delay = args.delay
+    elif "MASSENTO_SCAN_DELAY" in os.environ:
+        Configuration.delay = os.getenv("MASSENTO_SCAN_DELAY")
+
+    try:
+        Configuration.delay = int(Configuration.delay)
+    except ValueError:
+        #Handle the exception
+        print("Scan Delay is not a number")
+        sys.exit(1)
+
+    if not args.input and not args.show:
+        print("Input not found.")
+        #parser.print_help()
+        sys.exit(2)
+    
     inputParam = args.input
     print('Input: ' + inputParam)
-
 
     Configuration.logger = logger
     print("Selected codecs: ", Configuration.selected_codecs.keys())
@@ -194,6 +217,29 @@ def main():
     if not os.path.exists(inputParam):
         print(inputParam + ' does not exist...exiting')
         sys.exit(-1)
+
+    if args.daemon:
+        print("daemon mode")
+        while True:
+            inputParam = ((args.input + os.path.sep).replace(os.path.sep*2, os.path.sep))
+            Configuration.src_root = inputParam
+            #logger.error("Folder processing: "+inputParam)
+
+            # collect_videos_new(src_root, dst_root, selected_codecs, forced):        
+            original_files = collect_videos(inputParam, 
+                Configuration.extensions, 
+                Configuration.codecs, 
+                Configuration.encode_identifiers, 
+                Configuration.analyze)
+            print_list(original_files,"Video List", logger)
+            print(" - DEBUG - force: " + str(Configuration.force_encode))
+            videos = get_video_objs(original_files, stat)
+            print_list(get_tasklist_report(videos),"Task List", logger)
+            failed_videos = process_videos(videos, Configuration.copy_only, stat)
+            print_list(failed_videos,'Failed Videos', logger)
+            time.sleep(Configuration.delay)
+
+
 
     if os.path.isfile(inputParam):
         logger.error("File processing: \""+inputParam+"\"")

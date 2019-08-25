@@ -65,6 +65,7 @@ class Configuration:
     copy_only = False
     delete_input = False
     service_mode = False
+    delay = 10
     
     @staticmethod
     def process_args(args):
