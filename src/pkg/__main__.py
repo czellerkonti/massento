@@ -204,7 +204,7 @@ def get_video_objs(files, stat):
 def main():
     args = parse_arguments()
     global logger
-    
+
     if args.verbose:
         Configuration.loglevel = "DEBUG"
     elif "MASSENTO_LOGLEVEL" in os.environ:
@@ -245,11 +245,13 @@ def main():
                 Configuration.encode_identifiers, 
                 Configuration.analyze)
             print_list(original_files,"Video List", logger)
-            print(" - DEBUG - force: " + str(Configuration.force_encode))
+            #print(" - DEBUG - force: " + str(Configuration.force_encode))
             videos = get_video_objs(original_files, stat)
             print_list(get_tasklist_report(videos),"Task List", logger)
             failed_videos = process_videos(videos, Configuration.copy_only, stat)
             print_list(failed_videos,'Failed Videos', logger)
+            print("finished...waiting %s seconds",Configuration.delay)
+            set_window_title("Waiting for job")
             time.sleep(Configuration.delay)
 
 

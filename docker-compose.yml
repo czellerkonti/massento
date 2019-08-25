@@ -1,0 +1,19 @@
+version: '3.3'
+
+services:
+
+  massento:
+    image: massento
+    hostname: massento
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'       
+        reservations:
+          cpus: '0.75'
+    volumes:
+      - /Users/u547059/data/noTimeMachine/shared/YT/orig/:/input
+      - /Users/u547059/data/noTimeMachine/shared/YT/encoded/:/output
+    environment:
+      - MASSENTO_DELAY=5
+      - MASSENTO_CODECS=phone_x265_norm
