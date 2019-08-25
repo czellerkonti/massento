@@ -95,12 +95,39 @@ def process_video(video):
         return False
 
 def get_temp_file(template):
-    ret = TEMPPATH + os.path.sep + TEMPFILE +'.' + CONTAINERS[template]
+    ret = Configuration.temppath + os.path.sep + Configuration.tempfile +'.' + CONTAINERS[template]
     print("TEMPFILE: " + ret)
     return
 
 def parse_arguments():
+    homeconfigfile = expanduser("~") + os.path.sep + ".config" + os.path.sep + Configuration.progname + os.path.sep + "config.json"
+    if os.name == "posix":
+        etcconfigfile = "/etc/" + Configuration.progname + os.path.sep + "config.json"
+    else:
+        etcconfigfile = os.getenv('LOCALAPPDATA') + os.path.sep + Configuration.progname + os.path.sep + "config.json"
+    """
+    if args.config:
+        configfile = args.config
+    elif os.path.isfile(homeconfigfile):
+        configfile = homeconfigfile
+    elif os.path.isfile(etcconfigfile):
+        configfile = etcconfigfile
+    else:
+        print("Config file not found...quit")
+        sys.exit(1)
+    """
+    if os.path.isfile(homeconfigfile):
+        configfile = homeconfigfile
+    elif os.path.isfile(etcconfigfile):
+        configfile = etcconfigfile
+    else:
+        print("Config file not found...quit")
+        sys.exit(1)
+    print("Config file: " + configfile)
+    Configuration.processConfigFile(configfile)
+
     parser = argparse.ArgumentParser(description="Transcodes videos in a folder")
+    parser.add_argument("-k","--config", help="config file")
     parser.add_argument("-t","--templates", help="Available templates: " + str(list(Configuration.codecs.keys())))
     parser.add_argument("-i","--input", help="Input file/directory")
     parser.add_argument("-m","--temppath", help="Temp directory")
@@ -114,9 +141,8 @@ def parse_arguments():
     parser.add_argument("-w","--forcewidth", help="forces the max width scaling to upscale low res videos NOT IMPLEMEMNTED", action="count")
     parser.add_argument("-d","--daemon", help="run in daemon mode NOT IMPLEMENTED", action="count")
     parser.add_argument("-v","--verbose", help="increase output verbosity", action="count")
-    parser.add_argument("-k","--config", help="config file")
-    
     args = parser.parse_args()
+    Configuration.process_args(args)
 
     if not args.input and not args.show:
         print("Input not found.")
@@ -124,7 +150,8 @@ def parse_arguments():
         sys.exit(2)
     return args
 
-def get_video_objs(files, config, stat):
+def get_video_objs(files, stat):
+    config = Configuration
     src_root = config.src_root
     dst_root = config.dst_root
     selected_codecs = config.selected_codecs
@@ -133,7 +160,7 @@ def get_video_objs(files, config, stat):
     for file in files:
         for codec in selected_codecs:
             video = Video(file, src_root, dst_root, selected_codecs[codec], force)
-            if config.paranoid and any(os.path.isfile(Video.generate_output_path(file, src_root, dst_root, x)) for x in config.codecs.values()):
+            if config.paranoid and any(os.path.isfile(Video.generate_output_path(file, src_root, dst_root, x)) for x in Configuration.codecs.values()):
                 logger.error(video.origFile + ' has been already transcoded with an other template, PARANOID mode is on')
                 continue
             if(force or (not video.existing)):
@@ -146,67 +173,52 @@ def get_video_objs(files, config, stat):
 
 def main():
     args = parse_arguments()
-    homeconfigfile = expanduser("~") + os.path.sep + ".config" + os.path.sep + Configuration.progname + os.path.sep + "config.json"
-    if os.name == "posix":
-        etcconfigfile = "/etc/" + Configuration.progname + os.path.sep + "config.json"
-    else:
-        etcconfigfile = os.getenv('LOCALAPPDATA') + os.path.sep + Configuration.progname + os.path.sep + "config.json"
-    if args.config:
-        configfile = args.config
-    elif os.path.isfile(homeconfigfile):
-        configfile = homeconfigfile
-    elif os.path.isfile(etcconfigfile):
-        configfile = etcconfigfile
-    else:
-        print("Config file not found...quit")
-        sys.exit(1)
-    print("Config file: " + configfile)
-        
     global logger
     if args.verbose:
         Configuration.loglevel = "DEBUG"
     elif "MASSENTO_LOGLEVEL" in os.environ:
         Configuration.loglevel = os.getenv("MASSENTO_LOGLEVEL")
-        
-    config = Configuration(configfile)
-    config.process_args(args)
+    
     inputParam = args.input
     print('Input: ' + inputParam)
 
 
     Configuration.logger = logger
-    logger = config.logger
-    print("Selected codecs: ", config.selected_codecs.keys())
-    stats = Statistics(config.temppath + os.path.sep + "stats_" + datetime.datetime.now().strftime(config.statfile_name_date) + ".csv")
+    print("Selected codecs: ", Configuration.selected_codecs.keys())
+    stats = Statistics(Configuration.temppath + os.path.sep + "stats_" + datetime.datetime.now().strftime(Configuration.statfile_name_date) + ".csv")
 
-    posts = [ "_"+name for name in config.selected_codecs.keys()]
+    posts = [ "_"+name for name in Configuration.selected_codecs.keys()]
     posts.append("_enc")
 
-    stat = Statistics(config.statfile)
+    stat = Statistics(Configuration.statfile)
     if not os.path.exists(inputParam):
         print(inputParam + ' does not exist...exiting')
         sys.exit(-1)
 
     if os.path.isfile(inputParam):
         logger.error("File processing: \""+inputParam+"\"")
-        for c in config.selected_codecs:
+        for c in Configuration.selected_codecs:
             process_videos(c, inputParam)
         sys.exit(0)
 
     if os.path.isdir(inputParam):
         inputParam = ((args.input + os.path.sep).replace(os.path.sep*2, os.path.sep))
-        config.src_root = inputParam
+        Configuration.src_root = inputParam
         #logger.error("Folder processing: "+inputParam)
 
         # collect_videos_new(src_root, dst_root, selected_codecs, forced):        
-        original_files = collect_videos(inputParam, config.extensions, config.codecs, config.encode_identifiers, config.analyze)
+        original_files = collect_videos(inputParam, 
+            Configuration.extensions, 
+            Configuration.codecs, 
+            Configuration.encode_identifiers, 
+            Configuration.analyze)
         print_list(original_files,"Video List", logger)
         my_input("Press a key to continue...")
-        print(" - DEBUG - force: " + str(config.force_encode))
-        videos = get_video_objs(original_files, config, stat)
+        print(" - DEBUG - force: " + str(Configuration.force_encode))
+        videos = get_video_objs(original_files, stat)
         print_list(get_tasklist_report(videos),"Task List", logger)
         my_input("Press a key to continue...")
-        failed_videos = process_videos(videos, config.copy_only, stat)
+        failed_videos = process_videos(videos, Configuration.copy_only, stat)
         print_list(failed_videos,'Failed Videos', logger)
         logger.error("Exit.")
 

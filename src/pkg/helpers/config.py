@@ -10,6 +10,7 @@ class Configuration:
     progname = "massento"
     # logs the process here
 
+    ffmpeg = ""
     ffprobe_opts = "-v error -select_streams v:0 -show_format -show_streams  -of default=noprint_wrappers=1"
     ffprobe_width = "-v error -of flat=s=_ -select_streams v:0 -show_entries stream=width"
     logfilename = "log.txt"
@@ -65,95 +66,97 @@ class Configuration:
     delete_input = False
     service_mode = False
     
-    def process_args(self,args):
+    @staticmethod
+    def process_args(args):
 
         if args.temppath:
-            self.temppath = args.temppath
-            #self.logfile = self.temppath + os.path.sep + "log.txt"
-            #self.task_list = self.temppath + os.path.sep + "list.txt"
+            temppath = args.temppath
+            #Configuration.logfile = Configuration.temppath + os.path.sep + "log.txt"
+            #Configuration.task_list = Configuration.temppath + os.path.sep + "list.txt"
 
         if args.encoder:
-            self.ffmpeg = args.encoder
+            Configuration.ffmpeg = args.encoder
     
         if not args.templates:
-            self.selected_codecs = self.codecs
+            selected_codecs = Configuration.codecs
         else:
             codec_names_argumentlist = args.templates.split(",")
             for codec_name in codec_names_argumentlist:
-                if codec_name not in [codec.name for key,codec in self.codecs.items()]:
+                if codec_name not in [codec.name for key,codec in Configuration.codecs.items()]:
                     print("Unknown codec: " + str(codec_name))
                 else:
-                    self.selected_codecs[codec_name] = self.codecs[codec_name]
-            if not self.selected_codecs:
+                    Configuration.selected_codecs[codec_name] = Configuration.codecs[codec_name]
+            if not Configuration.selected_codecs:
                 print("")
                 print("There is no known codec given.")
-                print("Known codecs: " + str(self.codecs.keys()))
+                print("Known codecs: " + str(Configuration.codecs.keys()))
                 print("Exiting...")
                 sys.exit(1)
         
         if args.show:
             print("Available templates")
             print("")
-            for key,codec in self.codecs.items():
+            for key,codec in Configuration.codecs.items():
                 print(codec.name+":    " + codec.options + ' ('+codec.container + ')')
             print()
-            print("ffmpeg: " + self.ffmpeg)
-            print("temppath: " + self.temppath)
-            print("EXTENSION FILTER: " + str(self.extensions))
+            print("ffmpeg: " + Configuration.ffmpeg)
+            print("temppath: " + Configuration.temppath)
+            print("EXTENSION FILTER: " + str(Configuration.extensions))
             sys.exit(1)
     
         if args.force:
-            self.force_encode = True
+            Configuration.force_encode = True
     
         if args.paranoid:
             print("Paranoid Mode is enabled")
-            self.paranoid = True
+            Configuration.paranoid = True
     
         if args.root:
-            self.dst_root = (args.root + os.path.sep).replace(os.path.sep*2, os.path.sep)
+            Configuration.dst_root = (args.root + os.path.sep).replace(os.path.sep*2, os.path.sep)
     
         if args.analyze:
-            self.analyze =  True
+            Configuration.analyze =  True
         
         if args.forcewidth:
-            self.forcewidth = True
+            Configuration.forcewidth = True
     
         if args.copy:
             if not args.root:
                 print("With -c you must use -r!")
                 print("Exiting...")
                 sys.exit(1)
-            self.copy_only = True
+            Configuration.copy_only = True
 
-    def __init__(self,file):
+    @staticmethod
+    def processConfigFile(file):
         with open(file) as data:
             d = json.load(data)
             if 'templates' in d:
                 templates = d["templates"]
                 if len(templates) > 0:
-                    self.codecs = {}
+                    Configuration.codecs = {}
                     for templateid in templates.keys():
                         maxscale = 4096
                         if "maxscale" in templates[templateid]:
                             maxscale = templates[templateid]["maxscale"]
                             if(not maxscale.isdigit()):
                                 maxscale = 4096
-                        self.codecs[templateid] =  CodecTemplate(templateid,templates[templateid]["opts"],templates[templateid]["container"],maxscale)
+                        Configuration.codecs[templateid] =  CodecTemplate(templateid,templates[templateid]["opts"],templates[templateid]["container"],maxscale)
             if 'ffmpeg' in d:
-                self.ffmpeg = d["ffmpeg"]
+                Configuration.ffmpeg = d["ffmpeg"]
             if 'temppath' in d:
-                self.temppath = d["temppath"]
-                self.logfile = self.temppath + os.path.sep + self.logfilename
-                self.task_list = self.temppath + os.path.sep + self.listfilename
+                Configuration.temppath = d["temppath"]
+                Configuration.logfile = Configuration.temppath + os.path.sep + Configuration.logfilename
+                Configuration.task_list = Configuration.temppath + os.path.sep + Configuration.listfilename
             if 'extensions_filter' in d:
-                self.extensions = tuple(d["extensions_filter"])
+                Configuration.extensions = tuple(d["extensions_filter"])
             if 'encode_identifiers' in d:
-                self.encode_identifiers = tuple(d["encode_identifiers"])
+                Configuration.encode_identifiers = tuple(d["encode_identifiers"])
             if 'ffprobe' in d:
-                self.ffprobe = str(d["ffprobe"])
+                Configuration.ffprobe = str(d["ffprobe"])
             if 'ffprobe_opts' in d:
-                self.ffprobe_opts = str(d["ffprobe_opts"])
+                Configuration.ffprobe_opts = str(d["ffprobe_opts"])
             if 'ffprobe_width' in d:
-                self.ffprobe_width = str(d["ffprobe_width"])
+                Configuration.ffprobe_width = str(d["ffprobe_width"])
             if 'ffmpeg_scaleopt' in d:
-                self.ffmpeg_scaleopt = str(d["ffmpeg_scaleopt"])
+                Configuration.ffmpeg_scaleopt = str(d["ffmpeg_scaleopt"])
