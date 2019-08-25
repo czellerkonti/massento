@@ -11,6 +11,7 @@ Optionally the input parameter can be a single file.
  - MASSENTO_OUTPUT
  - MASSENTO_DELETE_INPUT
  - MASSENTO_SCAN_DELAY
+ - MASSENTO_CODECS
 
 ## Memo
 Config variable evaluation precedence

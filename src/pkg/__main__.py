@@ -142,7 +142,40 @@ def parse_arguments():
     parser.add_argument("-d","--daemon", help="run in daemon mode", action="count")
     parser.add_argument("-y","--delay", help="daemon mode scan delay in seconds")
     parser.add_argument("-v","--verbose", help="increase output verbosity", action="count")
+    
+    
+    
     args = parser.parse_args()
+    
+    if args.input:
+        pass
+    elif "MASSENTO_INPUT" in os.environ:
+        args.input = os.getenv("MASSENTO_INPUT")
+
+    if args.root:
+        pass
+    elif "MASSENTO_OUTPUT" in os.environ:
+        args.root = os.getenv("MASSENTO_OUTPUT")
+
+    if args.delay:
+        Configuration.delay = args.delay
+    elif "MASSENTO_SCAN_DELAY" in os.environ:
+        Configuration.delay = os.getenv("MASSENTO_SCAN_DELAY")
+
+    try:
+        Configuration.delay = int(Configuration.delay)
+    except ValueError:
+        #Handle the exception
+        print("Scan Delay is not a number")
+        sys.exit(1)
+
+    if args.templates:
+        pass
+    elif "MASSENTO_CODECS" in os.environ:
+        args.templates = os.getenv("MASSENTO_CODECS")
+
+
+    
     Configuration.process_args(args)
 
     return args
@@ -171,33 +204,12 @@ def get_video_objs(files, stat):
 def main():
     args = parse_arguments()
     global logger
+    
     if args.verbose:
         Configuration.loglevel = "DEBUG"
     elif "MASSENTO_LOGLEVEL" in os.environ:
         Configuration.loglevel = os.getenv("MASSENTO_LOGLEVEL")
     
-    if args.input:
-        pass
-    elif "MASSENTO_INPUT" in os.environ:
-        args.input = os.getenv("MASSENTO_INPUT")
-
-    if args.root:
-        pass
-    elif "MASSENTO_OUTPUT" in os.environ:
-        args.root = os.getenv("MASSENTO_OUTPUT")
-
-    if args.delay:
-        Configuration.delay = args.delay
-    elif "MASSENTO_SCAN_DELAY" in os.environ:
-        Configuration.delay = os.getenv("MASSENTO_SCAN_DELAY")
-
-    try:
-        Configuration.delay = int(Configuration.delay)
-    except ValueError:
-        #Handle the exception
-        print("Scan Delay is not a number")
-        sys.exit(1)
-
     if not args.input and not args.show:
         print("Input not found.")
         #parser.print_help()
@@ -208,10 +220,11 @@ def main():
 
     Configuration.logger = logger
     print("Selected codecs: ", Configuration.selected_codecs.keys())
-    stats = Statistics(Configuration.temppath + os.path.sep + "stats_" + datetime.datetime.now().strftime(Configuration.statfile_name_date) + ".csv")
-
+    stats = Statistics(Configuration.statfile)
+    print("Stats file: " + Configuration.statfile)
     posts = [ "_"+name for name in Configuration.selected_codecs.keys()]
     posts.append("_enc")
+    ###################
 
     stat = Statistics(Configuration.statfile)
     if not os.path.exists(inputParam):
@@ -228,7 +241,7 @@ def main():
             # collect_videos_new(src_root, dst_root, selected_codecs, forced):        
             original_files = collect_videos(inputParam, 
                 Configuration.extensions, 
-                Configuration.codecs, 
+                Configuration.selected_codecs, 
                 Configuration.encode_identifiers, 
                 Configuration.analyze)
             print_list(original_files,"Video List", logger)
@@ -255,7 +268,7 @@ def main():
         # collect_videos_new(src_root, dst_root, selected_codecs, forced):        
         original_files = collect_videos(inputParam, 
             Configuration.extensions, 
-            Configuration.codecs, 
+            Configuration.selected_codecs, 
             Configuration.encode_identifiers, 
             Configuration.analyze)
         print_list(original_files,"Video List", logger)

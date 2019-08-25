@@ -41,7 +41,6 @@ class Configuration:
     log_date_format="%Y-%m-%d %H:%M:%S"
     statfile_name_date="%Y%m%d-%H-%M-%S"
     statfile=logpath + os.path.sep + "stats_" + datetime.datetime.now().strftime(statfile_name_date) + ".csv"
-    
     codecs = []
     codecs.append(CodecTemplate("mp3","-c:v copy -c:a libmp3lame -q:a 5 -movflags +faststart","mp4"))
     codecs.append(CodecTemplate("x264","-c:v libx264 -preset veryslow -crf 20 -tune film -c:a copy -movflags +faststart","mp4"))
@@ -71,7 +70,7 @@ class Configuration:
     def process_args(args):
 
         if args.temppath:
-            temppath = args.temppath
+            Configuration.temppath = args.temppath
             #Configuration.logfile = Configuration.temppath + os.path.sep + "log.txt"
             #Configuration.task_list = Configuration.temppath + os.path.sep + "list.txt"
 
@@ -79,7 +78,7 @@ class Configuration:
             Configuration.ffmpeg = args.encoder
     
         if not args.templates:
-            selected_codecs = Configuration.codecs
+            Configuration.selected_codecs = Configuration.codecs
         else:
             codec_names_argumentlist = args.templates.split(",")
             for codec_name in codec_names_argumentlist:
