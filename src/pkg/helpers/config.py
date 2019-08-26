@@ -25,12 +25,12 @@ class Configuration:
         ffprobe="ffprobe"
     else:
         logpath=os.getenv('LOCALAPPDATA') + os.path.sep + progname
-        ffmpeg="ffmpeg"
-        ffprobe="ffprobe"
+        ffmpeg="ffmpeg.exe"
+        ffprobe="ffprobe.exe"
     if not os.path.exists(logpath):
         os.mkdir(logpath)
-    logfile=logpath + os.path.sep + logfilename
     
+    logfile=logpath + os.path.sep + logfilename
     tempfile=''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
     task_list=logpath + os.path.sep + listfilename
     
@@ -102,6 +102,10 @@ class Configuration:
             print("ffmpeg: " + Configuration.ffmpeg)
             print("temppath: " + Configuration.temppath)
             print("EXTENSION FILTER: " + str(Configuration.extensions))
+            if(Configuration.delete_input):
+                print("Deleting source video: " )
+            else:
+                print("dont Deleting source video: " )
             sys.exit(1)
     
         if args.force:
@@ -126,6 +130,10 @@ class Configuration:
                 print("Exiting...")
                 sys.exit(1)
             Configuration.copy_only = True
+        #Configuration.statfile=args.input + os.path.sep + "stats_" + datetime.datetime.now().strftime(Configuration.statfile_name_date) + ".csv"
+        Configuration.statfile=args.input + os.path.sep + "stats" + ".csv"
+
+
 
     @staticmethod
     def processConfigFile(file):

@@ -60,9 +60,12 @@ def process_videos( videos, copy_only, stat ):
         if copy_only:
             copy_file(video.origFile,video.targetFile)
         else:
-            if( not process_video(video)):
+            if ( not process_video(video)):
                 failed_videos.append(video.targetFile)
             stat.write_row(stat.generate_csv_row(video))
+        if (video.getExecCode == 0) and Configuration.delete_input:
+            logger.info("Deleting source file: " + video.origFile)
+            os.remove(video.origFile)
 
     return failed_videos
 
@@ -140,10 +143,9 @@ def parse_arguments():
     parser.add_argument("-c","--copy", help="copy files only, use it only with -r", action="count")
     parser.add_argument("-w","--forcewidth", help="forces the max width scaling to upscale low res videos NOT IMPLEMEMNTED", action="count")
     parser.add_argument("-d","--daemon", help="run in daemon mode", action="count")
+    parser.add_argument("-x","--delete", help="Delete source video", action="count")
     parser.add_argument("-y","--delay", help="daemon mode scan delay in seconds")
     parser.add_argument("-v","--verbose", help="increase output verbosity", action="count")
-    
-    
     
     args = parser.parse_args()
     
@@ -156,6 +158,11 @@ def parse_arguments():
         pass
     elif "MASSENTO_OUTPUT" in os.environ:
         args.root = os.getenv("MASSENTO_OUTPUT")
+
+    if args.delete:
+        Configuration.delete_input = True
+    if "MASSENTO_DELETE_SOURCE" in os.environ:
+        Configuration.delete_input = os.getenv("MASSENTO_DELETE_SOURCE")
 
     if args.delay:
         Configuration.delay = args.delay
@@ -173,10 +180,8 @@ def parse_arguments():
         pass
     elif "MASSENTO_CODECS" in os.environ:
         args.templates = os.getenv("MASSENTO_CODECS")
-
-
-    
     Configuration.process_args(args)
+    Configuration.logfile=args.input + os.path.sep + Configuration.logfilename
 
     return args
 
@@ -198,6 +203,10 @@ def get_video_objs(files, stat):
             else:
                 stat.write_row(stat.generate_csv_row(video))
                 print("Skipping: "+video.origFile)
+                if Configuration.delete_input:
+                    logger.info("Deleting already processed source file: " + video.origFile)
+                    os.remove(video.origFile)
+
                 
     return res
 

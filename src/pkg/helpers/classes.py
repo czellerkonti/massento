@@ -12,6 +12,9 @@ class Video:
     def setExecCode(self,execCode):
         self.execCode = execCode
 
+    def getExecCode(self):
+        return self.execCode
+
     def getStartTime(self):
         if self.startDateTime == 0:
             return datetime.datetime.now()

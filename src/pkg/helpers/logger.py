@@ -4,6 +4,7 @@ class Logger:
     
     def __init__(self, logfile, log_date_format):
         self.logfile = logfile
+        print("aaaaaa" + logfile)
         self.logFormatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s',datefmt=log_date_format)
   
         rootLogger = logging.getLogger()
