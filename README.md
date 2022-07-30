@@ -1,7 +1,7 @@
 # video-transcoder
 ## Description
 massento is a platform independent script to encode videos written in python. It uses ffmpeg to encode the videos.
-As a main input parameter it takes a folder and walks throw the folder structure, searches for video files which has not been encoded yet.
+As a main input parameter it takes a folder and walks through the folder structure, searching for video files which have not been encoded yet.
 Optionally the input parameter can be a single file.
 
 ## Configuration
